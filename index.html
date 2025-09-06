@@ -743,594 +743,658 @@
 
 <div class="notification" id="notification"></div>
 
-<script>
-// =================================================================================
-//  STATE MANAGEMENT & INITIALIZATION
-// =================================================================================
-let users = {};
-let items = [];
-let inventoryLists = [];
-let currentUser = null;
-let currentTab = 'counting';
+<!-- ===== Module Script: Firebase + App logic ===== -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc,
+    setDoc, updateDoc, getDoc, getDocs, query, orderBy
+  } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
-document.addEventListener('DOMContentLoaded', () => {
-  loadStateFromLocalStorage();
-  document.getElementById('username').focus();
-});
+  // ---------- Firebase config (you provided this) ----------
+  const firebaseConfig = {
+    apiKey: "AIzaSyBA0xBgXIKGOGAsQIR1P0oPSV6BRQRVUDA",
+    authDomain: "potatostarsite.firebaseapp.com",
+    projectId: "potatostarsite",
+    storageBucket: "potatostarsite.firebasestorage.app",
+    messagingSenderId: "261387693142",
+    appId: "1:261387693142:web:310d97acab79d3d8529ff7"
+  };
 
-// IMPROVEMENT: Data Persistence using LocalStorage
-function saveStateToLocalStorage() {
-  localStorage.setItem('inventoryApp_users', JSON.stringify(users));
-  localStorage.setItem('inventoryApp_items', JSON.stringify(items));
-  localStorage.setItem('inventoryApp_lists', JSON.stringify(inventoryLists));
-}
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-function loadStateFromLocalStorage() {
-  const savedUsers = localStorage.getItem('inventoryApp_users');
-  const savedItems = localStorage.getItem('inventoryApp_items');
-  const savedLists = localStorage.getItem('inventoryApp_lists');
+  // Firestore collection refs
+  const usersRef = collection(db, 'users');
+  const itemsRef = collection(db, 'items');
+  const listsRef = collection(db, 'inventoryLists');
 
-  if (savedUsers) {
-    users = JSON.parse(savedUsers);
-  } else {
-    // First run: load default users
-    users = {
-      'admin': { password: 'admin123', role: 'owner', name: 'מנהל ראשי' },
-      'owner1': { password: 'owner123', role: 'owner', name: 'בעלים 1' },
-      'worker1': { password: 'worker123', role: 'worker', name: 'עובד 1' }
-    };
-  }
+  // Local state
+  let users = {}; // keyed by username doc id
+  let items = []; // array of {id, name, unit, target}
+  let inventoryLists = []; // array of {id, ...}
+  let currentUser = null;
+  let currentTab = 'counting';
 
-  if (savedItems) {
-    items = JSON.parse(savedItems);
-  } else {
-    // First run: load default items
-    items = [
-      ["חמגשית חומה", "שרבול", 1], ["פרגמנט פוטטוס", "חבילה", 1], ["פרגמנט מגשים", "חבילה", 1],
-      ["קערה חומה", "שרבול", 1], ["מכסה תירס גדול", "שרבולים", 3], ["מכסה תירס בינוני", "שרבולים", 2],
-      ["קוקוט רוטב 2 אוז", "שרבולים", 4], ["מכסה רוטב 2 אוז", "שרבולים", 4], ["מכסה קוקוט אלפרדו", "שרבולים", 4],
-      ["מכסה לקערה חומה", "שרבול", 1], ["קוקוט 1 אוז", "שרבולים", 5], ["סחוג", "קופסא", 1],
-      ["שום כתוש", "קופסא", 1], ["מפיות", "חבילה", 1], ["כוסות שתייה", "שרבולים", 2],
-      ["כוס שתייה חמה", "שרבול", 1], ["קשיות", "חבילה", 1], ["שקיות לבנות", "חבילה", 1],
-      ["שקיות זבל", "גליל", 1], ["שקיות גופה", "גליל", 1], ["שקיות TA", "חבילות", 4],
-      ["מלח מנות", "חבילה", 1], ["פלפל מנות", "חבילה", 1], ["מזלגונים מעץ", "קרטון", 1],
-      ["מזלגות רגיל", "קרטון", 1], ["כפיות", "קרטון", 1]
-    ];
-  }
+  // DOM ready
+  document.addEventListener('DOMContentLoaded', () => {
+    // Subscribe to Firestore collections (realtime)
+    subscribeToUsers();
+    subscribeToItems();
+    subscribeToLists();
 
-  if (savedLists) {
-    inventoryLists = JSON.parse(savedLists);
-  }
-
-  console.log('Demo Credentials:');
-  console.log('Owner: admin / admin123');
-  console.log('Worker: worker1 / worker123');
-}
-
-
-// =================================================================================
-//  TAB & UI MANAGEMENT
-// =================================================================================
-function switchTab(tabName) {
-  document.getElementById('countingSection').classList.add('hidden');
-  document.getElementById('listsSection').classList.add('hidden');
-  document.getElementById('storageSection').classList.add('hidden');
-  document.getElementById('adminSection').classList.add('hidden');
-  document.getElementById('itemsSection').classList.add('hidden');
-  
-  document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-  
-  document.getElementById(tabName + 'Section').classList.remove('hidden');
-  document.getElementById(tabName + 'Tab').classList.add('active');
-  
-  currentTab = tabName;
-
-  // Load content for specific tabs
-  if (tabName === 'lists') loadInventoryLists();
-  if (tabName === 'storage') loadStorageView();
-  if (tabName === 'admin') loadUsersGrid();
-  if (tabName === 'items') loadMasterItemsList();
-}
-
-
-// =================================================================================
-//  AUTHENTICATION
-// =================================================================================
-function login(event) {
-  event.preventDefault();
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
-  
-  if (users[username] && users[username].password === password) {
-    currentUser = { username: username, ...users[username] };
-    showMainApp();
-    showNotification(`ברוך הבא, ${currentUser.name}!`);
-  } else {
-    showLoginError('שם משתמש או סיסמה שגויים');
-  }
-}
-
-function logout() {
-  if (confirm('האם אתה בטוח שברצונך להתנתק?')) {
-    currentUser = null;
-    document.getElementById('loginScreen').classList.remove('hidden');
-    document.getElementById('mainApp').classList.add('hidden');
-    document.getElementById('username').value = '';
-    document.getElementById('password').value = '';
-    showNotification('התנתקת בהצלחה');
-  }
-}
-
-function showMainApp() {
-  document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('mainApp').classList.remove('hidden');
-  
-  document.getElementById('currentUser').textContent = currentUser.name;
-  const roleText = currentUser.role === 'owner' ? 'בעלים' : 'עובד';
-  document.getElementById('currentRole').textContent = roleText;
-  document.getElementById('currentRole').className = `role-badge ${currentUser.role}`;
-  
-  // Show/hide owner-only tabs and buttons
-  const ownerElements = ['adminTab', 'itemsTab', 'resetBtn'];
-  ownerElements.forEach(id => {
-      const el = document.getElementById(id);
-      if (currentUser.role === 'owner') {
-          el.classList.remove('hidden');
-          el.style.display = ''; // Use empty string to revert to default display
-      } else {
-          el.classList.add('hidden');
-          el.style.display = 'none';
-      }
+    // focus username input
+    document.getElementById('username').focus();
   });
 
-
-  initializeInventoryTable();
-  updateTabBadges();
-  
-  const now = new Date();
-  const defaultName = `ספירה ${now.toLocaleDateString('he-IL')} ${now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'})}`;
-  document.getElementById('listName').value = defaultName;
-}
-
-function showLoginError(message) {
-  const errorDiv = document.getElementById('loginError');
-  errorDiv.textContent = message;
-  errorDiv.classList.remove('hidden');
-  setTimeout(() => { errorDiv.classList.add('hidden'); }, 3000);
-}
-
-
-// =================================================================================
-//  USER MANAGEMENT (OWNER)
-// =================================================================================
-function addUser() {
-  if (currentUser.role !== 'owner') return;
-  const username = document.getElementById('newUsername').value.trim();
-  const password = document.getElementById('newPassword').value;
-  const role = document.getElementById('newRole').value;
-  
-  if (!username || !password) {
-    showNotification('יש למלא שם משתמש וסיסמה', 'error');
-    return;
-  }
-  if (users[username]) {
-    showNotification('שם המשתמש כבר קיים', 'error');
-    return;
-  }
-  
-  users[username] = { password: password, role: role, name: username };
-  saveStateToLocalStorage(); // IMPROVEMENT
-  
-  document.getElementById('newUsername').value = '';
-  document.getElementById('newPassword').value = '';
-  loadUsersGrid();
-  showNotification('המשתמש נוסף בהצלחה');
-}
-
-function deleteUser(username) {
-  if (currentUser.role !== 'owner' || username === currentUser.username) return;
-  
-  if (confirm(`האם אתה בטוח שברצונך למחוק את המשתמש "${username}"?`)) {
-    delete users[username];
-    saveStateToLocalStorage(); // IMPROVEMENT
-    loadUsersGrid();
-    showNotification('המשתמש נמחק בהצלחה');
-  }
-}
-
-function toggleUserRole(username) {
-  if (currentUser.role !== 'owner' || username === currentUser.username) return;
-  
-  users[username].role = users[username].role === 'owner' ? 'worker' : 'owner';
-  saveStateToLocalStorage(); // IMPROVEMENT
-  loadUsersGrid();
-  showNotification('תפקיד המשתמש שונה בהצלחה');
-}
-
-function loadUsersGrid() {
-  const grid = document.getElementById('usersGrid');
-  grid.innerHTML = Object.entries(users).map(([username, user]) => `
-    <div class="user-card">
-      <div class="user-details">
-        <h4>${user.name}</h4>
-        <span class="role-badge ${user.role}">${user.role === 'owner' ? 'בעלים' : 'עובד'}</span>
-      </div>
-      <div class="user-actions">
-        ${username !== currentUser.username ? `
-          <button class="btn-warning" onclick="toggleUserRole('${username}')">
-            ${user.role === 'owner' ? 'הפוך לעובד' : 'הפוך לבעלים'}
-          </button>
-          <button class="btn-danger" onclick="deleteUser('${username}')">מחק</button>` : 
-          '<span style="font-size: 12px; color: #7f8c8d;">(אתה)</span>'
+  // ---------- Realtime subscriptions ----------
+  function subscribeToUsers() {
+    onSnapshot(usersRef, async snapshot => {
+      if (snapshot.empty) {
+        // Seed default users (only when empty)
+        const defaultUsers = {
+          'admin': { password: 'admin123', role: 'owner', name: 'מנהל ראשי' },
+          'owner1': { password: 'owner123', role: 'owner', name: 'בעלים 1' },
+          'worker1': { password: 'worker123', role: 'worker', name: 'עובד 1' }
+        };
+        for (const [username, data] of Object.entries(defaultUsers)) {
+          await setDoc(doc(db, 'users', username), data);
         }
-      </div>
-    </div>
-  `).join('');
-}
-
-// =================================================================================
-//  MASTER ITEM MANAGEMENT (OWNER) - NEW FEATURE
-// =================================================================================
-function loadMasterItemsList() {
-    const container = document.getElementById('masterItemsList');
-    container.innerHTML = `
-        <table>
-            <thead>
-                <tr>
-                    <th>שם פריט</th>
-                    <th>יחידה</th>
-                    <th>כמות יעד</th>
-                    <th>פעולות</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${items.map((item, index) => `
-                    <tr>
-                        <td>${item[0]}</td>
-                        <td>${item[1]}</td>
-                        <td>${item[2]}</td>
-                        <td>
-                            <button class="btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deleteItem(${index})">מחק</button>
-                        </td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>
-    `;
-}
-
-function addItem() {
-    if (currentUser.role !== 'owner') return;
-    const name = document.getElementById('newItemName').value.trim();
-    const unit = document.getElementById('newItemUnit').value.trim();
-    const target = parseInt(document.getElementById('newItemTarget').value, 10);
-
-    if (!name || !unit || isNaN(target) || target < 0) {
-        showNotification('יש למלא את כל השדות כראוי', 'error');
+        // we'll get another snapshot after seeding
         return;
-    }
-
-    items.push([name, unit, target]);
-    saveStateToLocalStorage();
-    
-    document.getElementById('newItemName').value = '';
-    document.getElementById('newItemUnit').value = '';
-    document.getElementById('newItemTarget').value = '';
-    
-    loadMasterItemsList();
-    initializeInventoryTable(); // Refresh the counting table as well
-    showNotification('הפריט נוסף בהצלחה');
-}
-
-function deleteItem(index) {
-    if (currentUser.role !== 'owner') return;
-    const itemName = items[index][0];
-    if (confirm(`האם אתה בטוח שברצונך למחוק את הפריט "${itemName}" מהרשימה הראשית?`)) {
-        items.splice(index, 1);
-        saveStateToLocalStorage();
-        loadMasterItemsList();
-        initializeInventoryTable(); // Refresh the counting table
-        showNotification('הפריט נמחק');
-    }
-}
-
-
-// =================================================================================
-//  INVENTORY COUNTING
-// =================================================================================
-function initializeInventoryTable() {
-  const tbody = document.querySelector("#inventoryTable tbody");
-  tbody.innerHTML = '';
-  
-  items.forEach((item, index) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${item[0]}</td>
-      <td>${item[1]}</td>
-      <td>${item[2]}</td>
-      <td><input type="number" min="0" placeholder="0" oninput="updateStats()"></td>
-      <td>-</td>
-    `;
-    tbody.appendChild(tr);
-  });
-  updateStats(); // Initial call to set stats
-}
-
-function updateStats() {
-  const inputs = document.querySelectorAll('#inventoryTable tbody input[type="number"]');
-  let checkedCount = 0;
-  inputs.forEach(input => {
-    if (input.value !== '' && input.valueAsNumber >= 0) {
-      checkedCount++;
-    }
-  });
-  
-  document.getElementById('statsContainer').innerHTML = `
-      <div class="stat-card">
-        <div class="stat-number">${items.length}</div>
-        <div class="stat-label">סה"כ פריטים</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number">${checkedCount}</div>
-        <div class="stat-label">נספרו</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number" id="shortageItems">-</div>
-        <div class="stat-label">חוסרים</div>
-      </div>
-  `;
-  
-  const progress = items.length > 0 ? (checkedCount / items.length) * 100 : 0;
-  document.getElementById('progressFill').style.width = progress + '%';
-}
-
-function calculateShortages() {
-  const rows = document.querySelectorAll("#inventoryTable tbody tr");
-  let shortageCount = 0;
-  
-  rows.forEach((row, i) => {
-    const target = items[i][2];
-    const current = row.cells[3].querySelector("input").valueAsNumber || 0;
-    const shortage = target - current;
-    
-    row.cells[4].textContent = shortage > 0 ? shortage : 0;
-    row.className = shortage > 0 ? "shortage" : "ok";
-    if (shortage > 0) shortageCount++;
-  });
-  
-  document.getElementById('shortageItems').textContent = shortageCount;
-  document.getElementById('saveBtn').disabled = false;
-  
-  showNotification(shortageCount > 0 ? 
-    `נמצאו ${shortageCount} פריטים עם חוסר` : 
-    'כל הפריטים במלאי מלא!'
-  );
-}
-
-function resetCurrentInventory() {
-  if (currentUser && currentUser.role !== 'owner') {
-    showNotification('רק בעלים יכולים לאפס נתונים', 'error');
-    return;
-  }
-  
-  if (confirm('האם אתה בטוח שברצונך לאפס את הספירה הנוכחית?')) {
-    initializeInventoryTable(); // Rebuilds the table and clears inputs
-    document.getElementById('shortageItems').textContent = '-';
-    document.getElementById('saveBtn').disabled = true;
-    showNotification('הספירה הנוכחית אופסה בהצלחה');
-  }
-}
-
-function saveInventoryList() {
-  const listName = document.getElementById('listName').value.trim();
-  if (!listName) {
-    showNotification('יש להזין שם לרשימה', 'error');
-    return;
-  }
-  
-  const rows = document.querySelectorAll("#inventoryTable tbody tr");
-  const inventoryData = [];
-  const shortages = [];
-  let totalShortages = 0, totalCounted = 0;
-  
-  rows.forEach((row, i) => {
-    const current = row.cells[3].querySelector("input").valueAsNumber || 0;
-    const shortage = Math.max(0, items[i][2] - current);
-    
-    if (row.cells[3].querySelector("input").value !== '') totalCounted++;
-    if (shortage > 0) {
-      totalShortages++;
-      shortages.push({ name: items[i][0], unit: items[i][1], qty: shortage });
-    }
-    
-    inventoryData.push({
-      name: items[i][0], unit: items[i][1], target: items[i][2],
-      current: current, shortage: shortage
-    });
-  });
-  
-  inventoryLists.push({
-    id: Date.now(), name: listName, createdBy: currentUser.name,
-    createdAt: new Date().toISOString(), data: inventoryData, shortages: shortages,
-    stats: { totalItems: items.length, totalCounted, totalShortages },
-    status: totalShortages > 0 ? 'pending' : 'completed'
-  });
-  
-  saveStateToLocalStorage(); // IMPROVEMENT
-  updateTabBadges();
-  showNotification('הרשימה נשמרה בהצלחה!');
-  
-  const now = new Date();
-  const defaultName = `ספירה ${now.toLocaleDateString('he-IL')} ${now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'})}`;
-  document.getElementById('listName').value = defaultName;
-  resetCurrentInventory();
-  
-  // UX Improvement: Switch to lists tab after saving
-  switchTab('lists');
-}
-
-
-// =================================================================================
-//  VIEWING LISTS & STORAGE
-// =================================================================================
-function loadInventoryLists() {
-  const container = document.getElementById('inventoryLists');
-  if (inventoryLists.length === 0) {
-    container.innerHTML = `<div class="empty-state"><h3>🗂️ אין רשימות קיימות</h3></div>`;
-    return;
-  }
-  
-  const sortedLists = [...inventoryLists].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  
-  container.innerHTML = sortedLists.map(list => `
-    <div class="inventory-card">
-      <div class="inventory-card-header">
-        <div class="status-badge ${list.status}">${getStatusText(list.status)}</div>
-        <h3>${list.name}</h3>
-        <div class="inventory-meta">
-          <span>👤 ${list.createdBy}</span>
-          <span>🕒 ${getTimeAgo(new Date(list.createdAt))}</span>
-        </div>
-      </div>
-      <div class="inventory-card-body">
-        <div class="inventory-stats">
-          <div class="mini-stat"><div class="mini-stat-number">${list.stats.totalItems}</div><div class="mini-stat-label">פריטים</div></div>
-          <div class="mini-stat"><div class="mini-stat-number">${list.stats.totalCounted}</div><div class="mini-stat-label">נספרו</div></div>
-          <div class="mini-stat"><div class="mini-stat-number">${list.stats.totalShortages}</div><div class="mini-stat-label">חוסרים</div></div>
-        </div>
-        <div class="inventory-actions">
-          <button class="btn-primary" onclick="viewInventoryDetails(${list.id})">צפה בפרטים</button>
-          ${currentUser.role === 'owner' ? `<button class="btn-danger" onclick="deleteInventoryList(${list.id})">מחק</button>` : ''}
-        </div>
-      </div>
-    </div>
-  `).join('');
-}
-
-function deleteInventoryList(listId) {
-  if (currentUser.role !== 'owner') return;
-  const list = inventoryLists.find(l => l.id === listId);
-  if (confirm(`האם אתה בטוח שברצונך למחוק את הרשימה "${list.name}"?`)) {
-    inventoryLists = inventoryLists.filter(l => l.id !== listId);
-    saveStateToLocalStorage(); // IMPROVEMENT
-    loadInventoryLists();
-    updateTabBadges();
-    showNotification('הרשימה נמחקה בהצלחה');
-  }
-}
-
-function loadStorageView() {
-  const container = document.getElementById('storageContent');
-  const allShortages = inventoryLists.flatMap(list => list.shortages || []);
-
-  if (allShortages.length === 0) {
-    container.innerHTML = `<div class="empty-state"><h3>🏪 אין פריטים לאיסוף מהמחסן</h3></div>`;
-    return;
-  }
-
-  // Aggregate shortages by item name
-  const aggregatedShortages = allShortages.reduce((acc, shortage) => {
-      if (!acc[shortage.name]) {
-          acc[shortage.name] = { ...shortage, qty: 0 };
       }
-      acc[shortage.name].qty += shortage.qty;
-      return acc;
-  }, {});
-  
-  const storageItems = Object.values(aggregatedShortages);
+      users = {};
+      snapshot.docs.forEach(d => {
+        users[d.id] = d.data();
+      });
+      // If admin is not present locally, nothing else to do; UI that needs users will re-render when opened
+      // Keep console demo credentials
+      console.log('Demo Credentials:');
+      console.log('Owner: admin / admin123');
+      console.log('Worker: worker1 / worker123');
+      // If current app is showing users grid, refresh it
+      if (currentTab === 'admin') loadUsersGrid();
+    }, err => console.error('Users snapshot error', err));
+  }
 
-  container.innerHTML = `
-    <div class="stats">
-      <div class="stat-card">
-        <div class="stat-number">${storageItems.length}</div>
-        <div class="stat-label">סה"כ פריטים בחוסר</div>
+  function subscribeToItems() {
+    onSnapshot(itemsRef, async snapshot => {
+      if (snapshot.empty) {
+        // Seed default items (only when empty)
+        const defaultItems = [
+          ["חמגשית חומה", "שרבול", 1], ["פרגמנט פוטטוס", "חבילה", 1], ["פרגמנט מגשים", "חבילה", 1],
+          ["קערה חומה", "שרבול", 1], ["מכסה תירס גדול", "שרבולים", 3], ["מכסה תירס בינוני", "שרבולים", 2],
+          ["קוקוט רוטב 2 אוז", "שרבולים", 4], ["מכסה רוטב 2 אוז", "שרבולים", 4], ["מכסה קוקוט אלפרדו", "שרבולים", 4],
+          ["מכסה לקערה חומה", "שרבול", 1], ["קוקוט 1 אוז", "שרבולים", 5], ["סחוג", "קופסא", 1],
+          ["שום כתוש", "קופסא", 1], ["מפיות", "חבילה", 1], ["כוסות שתייה", "שרבולים", 2],
+          ["כוס שתייה חמה", "שרבול", 1], ["קשיות", "חבילה", 1], ["שקיות לבנות", "חבילה", 1],
+          ["שקיות זבל", "גליל", 1], ["שקיות גופה", "גליל", 1], ["שקיות TA", "חבילות", 4],
+          ["מלח מנות", "חבילה", 1], ["פלפל מנות", "חבילה", 1], ["מזלגונים מעץ", "קרטון", 1],
+          ["מזלגות רגיל", "קרטון", 1], ["כפיות", "קרטון", 1]
+        ];
+        for (const it of defaultItems) {
+          await addDoc(itemsRef, { name: it[0], unit: it[1], target: it[2] });
+        }
+        return;
+      }
+      items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Refresh UI pieces that depend on items
+      loadMasterItemsList();
+      initializeInventoryTable();
+    }, err => console.error('Items snapshot error', err));
+  }
+
+  function subscribeToLists() {
+    // Order by createdAt descending for nicer UI
+    // For simplicity we listen to the collection (no query here)
+    onSnapshot(listsRef, snapshot => {
+      inventoryLists = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Sort descending by createdAt if available
+      inventoryLists.sort((a,b) => {
+        const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return tb - ta;
+      });
+      updateTabBadges();
+      if (currentTab === 'lists') loadInventoryLists();
+      if (currentTab === 'storage') loadStorageView();
+    }, err => console.error('Lists snapshot error', err));
+  }
+
+  // ---------- TAB & UI MANAGEMENT ----------
+  function switchTab(tabName) {
+    document.getElementById('countingSection').classList.add('hidden');
+    document.getElementById('listsSection').classList.add('hidden');
+    document.getElementById('storageSection').classList.add('hidden');
+    document.getElementById('adminSection').classList.add('hidden');
+    document.getElementById('itemsSection').classList.add('hidden');
+    
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    
+    document.getElementById(tabName + 'Section').classList.remove('hidden');
+    document.getElementById(tabName + 'Tab').classList.add('active');
+    
+    currentTab = tabName;
+
+    // Load content for specific tabs
+    if (tabName === 'lists') loadInventoryLists();
+    if (tabName === 'storage') loadStorageView();
+    if (tabName === 'admin') loadUsersGrid();
+    if (tabName === 'items') loadMasterItemsList();
+  }
+
+  // Expose to window for inline handlers
+  window.switchTab = switchTab;
+
+  // ---------- AUTHENTICATION ----------
+  function login(event) {
+    event.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    
+    if (users[username] && users[username].password === password) {
+      currentUser = { username: username, ...users[username] };
+      showMainApp();
+      showNotification(`ברוך הבא, ${currentUser.name}!`);
+    } else {
+      showLoginError('שם משתמש או סיסמה שגויים');
+    }
+  }
+  window.login = login;
+
+  function logout() {
+    if (confirm('האם אתה בטוח שברצונך להתנתק?')) {
+      currentUser = null;
+      document.getElementById('loginScreen').classList.remove('hidden');
+      document.getElementById('mainApp').classList.add('hidden');
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+      showNotification('התנתקת בהצלחה');
+    }
+  }
+  window.logout = logout;
+
+  function showMainApp() {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('mainApp').classList.remove('hidden');
+    
+    document.getElementById('currentUser').textContent = currentUser.name;
+    const roleText = currentUser.role === 'owner' ? 'בעלים' : 'עובד';
+    document.getElementById('currentRole').textContent = roleText;
+    document.getElementById('currentRole').className = `role-badge ${currentUser.role}`;
+    
+    // Show/hide owner-only tabs and buttons
+    const ownerElements = ['adminTab', 'itemsTab', 'resetBtn'];
+    ownerElements.forEach(id => {
+        const el = document.getElementById(id);
+        if (currentUser.role === 'owner') {
+            el.classList.remove('hidden');
+            el.style.display = ''; // Use empty string to revert to default display
+        } else {
+            el.classList.add('hidden');
+            el.style.display = 'none';
+        }
+    });
+
+    initializeInventoryTable();
+    updateTabBadges();
+    
+    const now = new Date();
+    const defaultName = `ספירה ${now.toLocaleDateString('he-IL')} ${now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'})}`;
+    document.getElementById('listName').value = defaultName;
+  }
+
+  function showLoginError(message) {
+    const errorDiv = document.getElementById('loginError');
+    errorDiv.textContent = message;
+    errorDiv.classList.remove('hidden');
+    setTimeout(() => { errorDiv.classList.add('hidden'); }, 3000);
+  }
+
+  // ---------- USER MANAGEMENT (OWNER) ----------
+  async function addUser() {
+    if (!currentUser || currentUser.role !== 'owner') {
+      showNotification('רק בעלים יכולים להוסיף משתמשים', 'error');
+      return;
+    }
+    const username = document.getElementById('newUsername').value.trim();
+    const password = document.getElementById('newPassword').value;
+    const role = document.getElementById('newRole').value;
+    
+    if (!username || !password) {
+      showNotification('יש למלא שם משתמש וסיסמה', 'error');
+      return;
+    }
+    if (users[username]) {
+      showNotification('שם המשתמש כבר קיים', 'error');
+      return;
+    }
+    
+    await setDoc(doc(db, 'users', username), { password, role, name: username });
+    document.getElementById('newUsername').value = '';
+    document.getElementById('newPassword').value = '';
+    showNotification('המשתמש נוסף בהצלחה');
+  }
+  window.addUser = addUser;
+
+  async function deleteUser(username) {
+    if (!currentUser || currentUser.role !== 'owner' || username === currentUser.username) return;
+    if (confirm(`האם אתה בטוח שברצונך למחוק את המשתמש "${username}"?`)) {
+      await deleteDoc(doc(db, 'users', username));
+      showNotification('המשתמש נמחק בהצלחה');
+    }
+  }
+  window.deleteUser = deleteUser;
+
+  async function toggleUserRole(username) {
+    if (!currentUser || currentUser.role !== 'owner' || username === currentUser.username) return;
+    const newRole = users[username].role === 'owner' ? 'worker' : 'owner';
+    await updateDoc(doc(db, 'users', username), { role: newRole });
+    showNotification('תפקיד המשתמש שונה בהצלחה');
+  }
+  window.toggleUserRole = toggleUserRole;
+
+  function loadUsersGrid() {
+    const grid = document.getElementById('usersGrid');
+    const entries = Object.entries(users);
+    if (entries.length === 0) {
+      grid.innerHTML = `<div class="empty-state"><h3>אין משתמשים</h3></div>`;
+      return;
+    }
+    grid.innerHTML = entries.map(([username, user]) => `
+      <div class="user-card">
+        <div class="user-details">
+          <h4>${user.name}</h4>
+          <span class="role-badge ${user.role}">${user.role === 'owner' ? 'בעלים' : 'עובד'}</span>
+        </div>
+        <div class="user-actions">
+          ${username !== (currentUser && currentUser.username) ? `
+            <button class="btn-warning" onclick="toggleUserRole('${username}')">
+              ${user.role === 'owner' ? 'הפוך לעובד' : 'הפוך לבעלים'}
+            </button>
+            <button class="btn-danger" onclick="deleteUser('${username}')">מחק</button>` : 
+            '<span style="font-size: 12px; color: #7f8c8d;">(אתה)</span>'
+          }
+        </div>
       </div>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>פריט</th>
-          <th>יחידה</th>
-          <th>סה"כ כמות להביא</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${storageItems.map(item => `
-          <tr>
-            <td>${item.name}</td>
-            <td>${item.unit}</td>
-            <td style="font-weight: bold;">${item.qty}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
-}
+    `).join('');
+  }
 
+  // ---------- MASTER ITEM MANAGEMENT ----------
+  function loadMasterItemsList() {
+      const container = document.getElementById('masterItemsList');
+      if (!items || items.length === 0) {
+        container.innerHTML = `<div class="empty-state"><h3>אין פריטים ברשימה הראשית</h3></div>`;
+        return;
+      }
+      container.innerHTML = `
+          <table>
+              <thead>
+                  <tr>
+                      <th>שם פריט</th>
+                      <th>יחידה</th>
+                      <th>כמות יעד</th>
+                      <th>פעולות</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  ${items.map((item) => `
+                      <tr>
+                          <td>${item.name}</td>
+                          <td>${item.unit}</td>
+                          <td>${item.target}</td>
+                          <td>
+                              <button class="btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deleteItem('${item.id}')">מחק</button>
+                          </td>
+                      </tr>
+                  `).join('')}
+              </tbody>
+          </table>
+      `;
+  }
 
-// =================================================================================
-//  UTILITY & HELPER FUNCTIONS
-// =================================================================================
-function updateTabBadges() {
-  const listsCount = inventoryLists.length;
-  const storageCount = inventoryLists.reduce((total, list) => total + (list.shortages ? list.shortages.length : 0), 0);
-  
-  document.getElementById('listsBadge').textContent = listsCount;
-  document.getElementById('storageBadge').textContent = storageCount;
-  
-  document.getElementById('listsBadge').style.display = listsCount > 0 ? 'inline-block' : 'none';
-  document.getElementById('storageBadge').style.display = storageCount > 0 ? 'inline-block' : 'none';
-}
+  async function addItem() {
+      if (!currentUser || currentUser.role !== 'owner') {
+        showNotification('רק בעלים יכולים להוסיף פריטים', 'error');
+        return;
+      }
+      const name = document.getElementById('newItemName').value.trim();
+      const unit = document.getElementById('newItemUnit').value.trim();
+      const target = parseInt(document.getElementById('newItemTarget').value, 10);
 
-function showNotification(message, type = 'success') {
-  const notification = document.getElementById('notification');
-  notification.textContent = message;
-  notification.className = `notification ${type} show`;
-  setTimeout(() => { notification.classList.remove('show'); }, 3000);
-}
+      if (!name || !unit || isNaN(target) || target < 0) {
+          showNotification('יש למלא את כל השדות כראוי', 'error');
+          return;
+      }
 
-function getStatusText(status) {
-  return { 'completed': 'הושלם', 'pending': 'ממתין', 'in-progress': 'בתהליך' }[status] || 'לא ידוע';
-}
+      await addDoc(itemsRef, { name, unit, target });
+      document.getElementById('newItemName').value = '';
+      document.getElementById('newItemUnit').value = '';
+      document.getElementById('newItemTarget').value = '';
+      showNotification('הפריט נוסף בהצלחה');
+  }
+  window.addItem = addItem;
 
-function getTimeAgo(date) {
-  const diffMs = new Date() - date;
-  const diffMins = Math.round(diffMs / 60000);
-  if (diffMins < 60) return `לפני ${diffMins} דקות`;
-  const diffHours = Math.round(diffMs / 3600000);
-  if (diffHours < 24) return `לפני ${diffHours} שעות`;
-  const diffDays = Math.round(diffMs / 86400000);
-  return `לפני ${diffDays} ימים`;
-}
+  async function deleteItem(itemId) {
+      if (!currentUser || currentUser.role !== 'owner') return;
+      const item = items.find(i => i.id === itemId);
+      if (!item) return;
+      if (confirm(`האם אתה בטוח שברצונך למחוק את הפריט "${item.name}" מהרשימה הראשית?`)) {
+          await deleteDoc(doc(db, 'items', itemId));
+          showNotification('הפריט נמחק');
+      }
+  }
+  window.deleteItem = deleteItem;
 
-// Simplified modal view for brevity, can be expanded
-function viewInventoryDetails(listId) {
+  // ---------- INVENTORY COUNTING ----------
+  function initializeInventoryTable() {
+    const tbody = document.querySelector("#inventoryTable tbody");
+    tbody.innerHTML = '';
+    
+    (items || []).forEach((item, index) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${item.name}</td>
+        <td>${item.unit}</td>
+        <td>${item.target}</td>
+        <td><input type="number" min="0" placeholder="0" oninput="updateStats()"></td>
+        <td>-</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    updateStats(); // Initial call to set stats
+  }
+  window.initializeInventoryTable = initializeInventoryTable;
+
+  function updateStats() {
+    const inputs = document.querySelectorAll('#inventoryTable tbody input[type="number"]');
+    let checkedCount = 0;
+    inputs.forEach(input => {
+      if (input.value !== '' && input.valueAsNumber >= 0) {
+        checkedCount++;
+      }
+    });
+    
+    document.getElementById('statsContainer').innerHTML = `
+        <div class="stat-card">
+          <div class="stat-number">${items.length}</div>
+          <div class="stat-label">סה"כ פריטים</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">${checkedCount}</div>
+          <div class="stat-label">נספרו</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="shortageItems">-</div>
+          <div class="stat-label">חוסרים</div>
+        </div>
+    `;
+    
+    const progress = items.length > 0 ? (checkedCount / items.length) * 100 : 0;
+    document.getElementById('progressFill').style.width = progress + '%';
+  }
+  window.updateStats = updateStats;
+
+  function calculateShortages() {
+    const rows = document.querySelectorAll("#inventoryTable tbody tr");
+    let shortageCount = 0;
+    
+    rows.forEach((row, i) => {
+      const target = items[i].target;
+      const current = row.cells[3].querySelector("input").valueAsNumber || 0;
+      const shortage = target - current;
+      
+      row.cells[4].textContent = shortage > 0 ? shortage : 0;
+      row.className = shortage > 0 ? "shortage" : "ok";
+      if (shortage > 0) shortageCount++;
+    });
+    
+    document.getElementById('shortageItems').textContent = shortageCount;
+    document.getElementById('saveBtn').disabled = false;
+    
+    showNotification(shortageCount > 0 ? 
+      `נמצאו ${shortageCount} פריטים עם חוסר` : 
+      'כל הפריטים במלאי מלא!'
+    );
+  }
+  window.calculateShortages = calculateShortages;
+
+  function resetCurrentInventory() {
+    if (currentUser && currentUser.role !== 'owner') {
+      showNotification('רק בעלים יכולים לאפס נתונים', 'error');
+      return;
+    }
+    
+    if (confirm('האם אתה בטוח שברצונך לאפס את הספירה הנוכחית?')) {
+      initializeInventoryTable(); // Rebuilds the table and clears inputs
+      document.getElementById('shortageItems').textContent = '-';
+      document.getElementById('saveBtn').disabled = true;
+      showNotification('הספירה הנוכחית אופסה בהצלחה');
+    }
+  }
+  window.resetCurrentInventory = resetCurrentInventory;
+
+  // Save inventory list to Firestore (realtime)
+  async function saveInventoryList() {
+    if (!currentUser) {
+      showNotification('אנא התחבר', 'error');
+      return;
+    }
+    const listName = document.getElementById('listName').value.trim();
+    if (!listName) {
+      showNotification('יש להזין שם לרשימה', 'error');
+      return;
+    }
+    
+    const rows = document.querySelectorAll("#inventoryTable tbody tr");
+    const inventoryData = [];
+    const shortages = [];
+    let totalShortages = 0, totalCounted = 0;
+    
+    rows.forEach((row, i) => {
+      const current = row.cells[3].querySelector("input").valueAsNumber || 0;
+      const shortage = Math.max(0, items[i].target - current);
+      
+      if (row.cells[3].querySelector("input").value !== '') totalCounted++;
+      if (shortage > 0) {
+        totalShortages++;
+        shortages.push({ name: items[i].name, unit: items[i].unit, qty: shortage });
+      }
+      
+      inventoryData.push({
+        name: items[i].name, unit: items[i].unit, target: items[i].target,
+        current: current, shortage: shortage
+      });
+    });
+    
+    const newList = {
+      name: listName,
+      createdBy: currentUser.name,
+      createdAt: new Date().toISOString(),
+      data: inventoryData,
+      shortages,
+      stats: { totalItems: items.length, totalCounted, totalShortages },
+      status: totalShortages > 0 ? 'pending' : 'completed'
+    };
+    
+    await addDoc(listsRef, newList);
+    // UI feedback
+    updateTabBadges();
+    showNotification('הרשימה נשמרה בהצלחה!');
+    
+    const now = new Date();
+    const defaultName = `ספירה ${now.toLocaleDateString('he-IL')} ${now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'})}`;
+    document.getElementById('listName').value = defaultName;
+    resetCurrentInventory();
+    switchTab('lists');
+  }
+  window.saveInventoryList = saveInventoryList;
+
+  // ---------- VIEW & DELETE LISTS ----------
+  function loadInventoryLists() {
+    const container = document.getElementById('inventoryLists');
+    if (!inventoryLists || inventoryLists.length === 0) {
+      container.innerHTML = `<div class="empty-state"><h3>🗂️ אין רשימות קיימות</h3></div>`;
+      return;
+    }
+    
+    const sortedLists = [...inventoryLists].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    container.innerHTML = sortedLists.map(list => `
+      <div class="inventory-card">
+        <div class="inventory-card-header">
+          <div class="status-badge ${list.status}">${getStatusText(list.status)}</div>
+          <h3>${list.name}</h3>
+          <div class="inventory-meta">
+            <span>👤 ${list.createdBy}</span>
+            <span>🕒 ${getTimeAgo(new Date(list.createdAt))}</span>
+          </div>
+        </div>
+        <div class="inventory-card-body">
+          <div class="inventory-stats">
+            <div class="mini-stat"><div class="mini-stat-number">${list.stats.totalItems}</div><div class="mini-stat-label">פריטים</div></div>
+            <div class="mini-stat"><div class="mini-stat-number">${list.stats.totalCounted}</div><div class="mini-stat-label">נספרו</div></div>
+            <div class="mini-stat"><div class="mini-stat-number">${list.stats.totalShortages}</div><div class="mini-stat-label">חוסרים</div></div>
+          </div>
+          <div class="inventory-actions">
+            <button class="btn-primary" onclick="viewInventoryDetails('${list.id}')">צפה בפרטים</button>
+            ${currentUser && currentUser.role === 'owner' ? `<button class="btn-danger" onclick="deleteInventoryList('${list.id}')">מחק</button>` : ''}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+  window.loadInventoryLists = loadInventoryLists;
+
+  async function deleteInventoryList(listId) {
+    if (!currentUser || currentUser.role !== 'owner') return;
     const list = inventoryLists.find(l => l.id === listId);
     if (!list) return;
+    if (confirm(`האם אתה בטוח שברצונך למחוק את הרשימה "${list.name}"?`)) {
+      await deleteDoc(doc(db, 'inventoryLists', listId));
+      showNotification('הרשימה נמחקה בהצלחה');
+    }
+  }
+  window.deleteInventoryList = deleteInventoryList;
 
-    let detailsHtml = `
-        <h2>${list.name}</h2>
-        <p>נוצר על ידי: ${list.createdBy} ב-${new Date(list.createdAt).toLocaleString('he-IL')}</p>
-        <table style="width:100%;">
-            <thead><tr><th>פריט</th><th>יעד</th><th>נמצא</th><th>חוסר</th></tr></thead>
-            <tbody>
-                ${list.data.map(item => `
-                    <tr style="${item.shortage > 0 ? 'background:#ffe0e0' : ''}">
-                        <td>${item.name}</td>
-                        <td>${item.target}</td>
-                        <td>${item.current}</td>
-                        <td style="font-weight:bold; color:${item.shortage > 0 ? '#e74c3c' : 'green'};">${item.shortage}</td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>
+  // ---------- STORAGE VIEW ----------
+  function loadStorageView() {
+    const container = document.getElementById('storageContent');
+    const allShortages = (inventoryLists || []).flatMap(list => list.shortages || []);
+  
+    if (allShortages.length === 0) {
+      container.innerHTML = `<div class="empty-state"><h3>🏪 אין פריטים לאיסוף מהמחסן</h3></div>`;
+      return;
+    }
+  
+    // Aggregate shortages by item name
+    const aggregatedShortages = allShortages.reduce((acc, shortage) => {
+        if (!acc[shortage.name]) {
+            acc[shortage.name] = { ...shortage, qty: 0 };
+        }
+        acc[shortage.name].qty += shortage.qty;
+        return acc;
+    }, {});
+    
+    const storageItems = Object.values(aggregatedShortages);
+  
+    container.innerHTML = `
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-number">${storageItems.length}</div>
+          <div class="stat-label">סה"כ פריטים בחוסר</div>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>פריט</th>
+            <th>יחידה</th>
+            <th>סה"כ כמות להביא</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${storageItems.map(item => `
+            <tr>
+              <td>${item.name}</td>
+              <td>${item.unit}</td>
+              <td style="font-weight: bold;">${item.qty}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
     `;
-    const newWindow = window.open("", "Details", "width=800,height=600");
-    newWindow.document.write(`<html lang="he" dir="rtl"><head><title>פרטי רשימה</title><style>${document.querySelector('style').innerHTML}</style></head><body><div class="container" style="margin-top:20px;"><div class="section">${detailsHtml}</div></div></body></html>`);
-    newWindow.document.close();
-}
+  }
+  window.loadStorageView = loadStorageView;
+
+  // ---------- UTILITIES ----------
+  function updateTabBadges() {
+    const listsCount = inventoryLists.length || 0;
+    const storageCount = inventoryLists.reduce((total, list) => total + (list.shortages ? list.shortages.length : 0), 0);
+    
+    document.getElementById('listsBadge').textContent = listsCount;
+    document.getElementById('storageBadge').textContent = storageCount;
+    
+    document.getElementById('listsBadge').style.display = listsCount > 0 ? 'inline-block' : 'none';
+    document.getElementById('storageBadge').style.display = storageCount > 0 ? 'inline-block' : 'none';
+  }
+  window.updateTabBadges = updateTabBadges;
+
+  function showNotification(message, type = 'success') {
+    const notification = document.getElementById('notification');
+    notification.textContent = message;
+    notification.className = `notification ${type} show`;
+    setTimeout(() => { notification.classList.remove('show'); }, 3000);
+  }
+  window.showNotification = showNotification;
+
+  function getStatusText(status) {
+    return { 'completed': 'הושלם', 'pending': 'ממתין', 'in-progress': 'בתהליך' }[status] || 'לא ידוע';
+  }
+
+  function getTimeAgo(date) {
+    const diffMs = new Date() - date;
+    const diffMins = Math.round(diffMs / 60000);
+    if (diffMins < 60) return `לפני ${diffMins} דקות`;
+    const diffHours = Math.round(diffMs / 3600000);
+    if (diffHours < 24) return `לפני ${diffHours} שעות`;
+    const diffDays = Math.round(diffMs / 86400000);
+    return `לפני ${diffDays} ימים`;
+  }
+
+  // Simplified modal view
+  function viewInventoryDetails(listId) {
+      const list = inventoryLists.find(l => l.id === listId);
+      if (!list) return;
+
+      let detailsHtml = `
+          <h2>${list.name}</h2>
+          <p>נוצר על ידי: ${list.createdBy} ב-${new Date(list.createdAt).toLocaleString('he-IL')}</p>
+          <table style="width:100%;">
+              <thead><tr><th>פריט</th><th>יעד</th><th>נמצא</th><th>חוסר</th></tr></thead>
+              <tbody>
+                  ${list.data.map(item => `
+                      <tr style="${item.shortage > 0 ? 'background:#ffe0e0' : ''}">
+                          <td>${item.name}</td>
+                          <td>${item.target}</td>
+                          <td>${item.current}</td>
+                          <td style="font-weight:bold; color:${item.shortage > 0 ? '#e74c3c' : 'green'};">${item.shortage}</td>
+                      </tr>
+                  `).join('')}
+              </tbody>
+          </table>
+      `;
+      const newWindow = window.open("", "Details", "width=900,height=700");
+      newWindow.document.write(`<html lang="he" dir="rtl"><head><title>פרטי רשימה</title><style>${document.querySelector('style').innerHTML}</style></head><body><div class="container" style="margin-top:20px;"><div class="section">${detailsHtml}</div></div></body></html>`);
+      newWindow.document.close();
+  }
+  window.viewInventoryDetails = viewInventoryDetails;
+
+  // Expose a few more functions used in HTML
+  window.loadMasterItemsList = loadMasterItemsList;
+  window.loadUsersGrid = loadUsersGrid;
+  window.loadInventoryLists = loadInventoryLists;
 
 </script>
-
 </body>
 </html>
