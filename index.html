@@ -6,594 +6,606 @@
 <title>מערכת בדיקת מלאי - גרסה משופרת</title>
 <style>
   * { box-sizing: border-box; }
-  body { 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-    padding: 20px; 
-    margin: 0;
-    min-height: 100vh;
+  body {
+	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	padding: 20px;
+	margin: 0;
+	min-height: 100vh;
   }
-  
+
   .container {
-    max-width: 1400px;
-    margin: 0 auto;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    overflow: hidden;
+	max-width: 1400px;
+	margin: 0 auto;
+	background: white;
+	border-radius: 12px;
+	box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+	overflow: hidden;
   }
-  
+
   .header {
-    background: linear-gradient(135deg, #2c3e50, #34495e);
-    color: white;
-    padding: 30px;
-    text-align: center;
-    position: relative;
+	background: linear-gradient(135deg, #2c3e50, #34495e);
+	color: white;
+	padding: 30px;
+	text-align: center;
+	position: relative;
   }
-  
+
   .user-info {
-    position: absolute;
-    top: 15px;
-    left: 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
+	position: absolute;
+	top: 15px;
+	left: 20px;
+	display: flex;
+	align-items: center;
+	gap: 15px;
   }
-  
+
   .user-badge {
-    background: rgba(255,255,255,0.2);
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-size: 0.9em;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+	background: rgba(255,255,255,0.2);
+	padding: 8px 15px;
+	border-radius: 20px;
+	font-size: 0.9em;
+	display: flex;
+	align-items: center;
+	gap: 8px;
   }
-  
+
   .role-badge {
-    background: #e74c3c;
-    padding: 4px 8px;
-    border-radius: 10px;
-    font-size: 0.8em;
-    font-weight: bold;
+	background: #e74c3c;
+	padding: 4px 8px;
+	border-radius: 10px;
+	font-size: 0.8em;
+	font-weight: bold;
   }
-  
+
   .role-badge.owner { background: #f39c12; }
   .role-badge.worker { background: #3498db; }
-  
+
   .logout-btn {
-    background: rgba(255,255,255,0.2);
-    border: 1px solid rgba(255,255,255,0.3);
-    color: white;
-    padding: 8px 15px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 0.9em;
-    transition: all 0.3s ease;
+	background: rgba(255,255,255,0.2);
+	border: 1px solid rgba(255,255,255,0.3);
+	color: white;
+	padding: 8px 15px;
+	border-radius: 20px;
+	cursor: pointer;
+	font-size: 0.9em;
+	transition: all 0.3s ease;
   }
-  
+
   .logout-btn:hover {
-    background: rgba(255,255,255,0.3);
+	background: rgba(255,255,255,0.3);
   }
-  
+
   h1 { margin: 0; font-size: 2.5em; font-weight: 300; }
-  h2 { 
-    color: #2c3e50; 
-    margin: 0 0 20px 0; 
-    font-size: 1.8em; 
-    font-weight: 300;
-    border-bottom: 2px solid #3498db;
-    padding-bottom: 10px;
+  h2 {
+	color: #2c3e50;
+	margin: 0 0 20px 0;
+	font-size: 1.8em;
+	font-weight: 300;
+	border-bottom: 2px solid #3498db;
+	padding-bottom: 10px;
   }
-  
+
   /* Tab Navigation */
   .tab-navigation {
-    background: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
-    display: flex;
-    overflow-x: auto;
+	background: #f8f9fa;
+	border-bottom: 1px solid #dee2e6;
+	display: flex;
+	overflow-x: auto;
   }
-  
+
   .tab-button {
-    background: none;
-    border: none;
-    padding: 20px 30px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 500;
-    color: #6c757d;
-    border-bottom: 3px solid transparent;
-    transition: all 0.3s ease;
-    white-space: nowrap;
-    position: relative;
+	background: none;
+	border: none;
+	padding: 20px 30px;
+	cursor: pointer;
+	font-size: 16px;
+	font-weight: 500;
+	color: #6c757d;
+	border-bottom: 3px solid transparent;
+	transition: all 0.3s ease;
+	white-space: nowrap;
+	position: relative;
   }
-  
+
   .tab-button:hover {
-    background: #e9ecef;
-    color: #495057;
+	background: #e9ecef;
+	color: #495057;
   }
-  
+
   .tab-button.active {
-    color: #3498db;
-    border-bottom-color: #3498db;
-    background: white;
+	color: #3498db;
+	border-bottom-color: #3498db;
+	background: white;
   }
-  
+
   .tab-button .badge {
-    background: #dc3545;
-    color: white;
-    border-radius: 12px;
-    padding: 2px 8px;
-    font-size: 12px;
-    margin-right: 5px;
-    font-weight: bold;
+	background: #dc3545;
+	color: white;
+	border-radius: 12px;
+	padding: 2px 8px;
+	font-size: 12px;
+	margin-right: 5px;
+	font-weight: bold;
   }
-  
+
   /* Login Form Styles */
   .login-container {
-    max-width: 400px;
-    margin: 50px auto;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    overflow: hidden;
+	max-width: 400px;
+	margin: 50px auto;
+	background: white;
+	border-radius: 12px;
+	box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+	overflow: hidden;
   }
-  
+
   .login-header {
-    background: linear-gradient(135deg, #2c3e50, #34495e);
-    color: white;
-    padding: 30px;
-    text-align: center;
+	background: linear-gradient(135deg, #2c3e50, #34495e);
+	color: white;
+	padding: 30px;
+	text-align: center;
   }
-  
+
   .login-form {
-    padding: 40px 30px;
+	padding: 40px 30px;
   }
-  
+
   .form-group {
-    margin-bottom: 25px;
+	margin-bottom: 25px;
   }
-  
+
   .form-group label {
-    display: block;
-    margin-bottom: 8px;
-    color: #2c3e50;
-    font-weight: 500;
+	display: block;
+	margin-bottom: 8px;
+	color: #2c3e50;
+	font-weight: 500;
   }
-  
+
   .form-group input, .form-group select {
-    width: 100%;
-    padding: 12px 15px;
-    border: 2px solid #bdc3c7;
-    border-radius: 8px;
-    font-size: 16px;
-    transition: all 0.3s ease;
+	width: 100%;
+	padding: 12px 15px;
+	border: 2px solid #bdc3c7;
+	border-radius: 8px;
+	font-size: 16px;
+	transition: all 0.3s ease;
   }
-  
+
   .form-group input:focus, .form-group select:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+	outline: none;
+	border-color: #3498db;
+	box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
   }
-  
+
   .error-message {
-    background: #e74c3c;
-    color: white;
-    padding: 12px 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    text-align: center;
-    font-weight: 500;
+	background: #e74c3c;
+	color: white;
+	padding: 12px 15px;
+	border-radius: 8px;
+	margin-bottom: 20px;
+	text-align: center;
+	font-weight: 500;
   }
-  
+
   /* User Management Styles */
   .admin-section {
-    background: #f8f9fa;
-    padding: 20px;
-    margin: 20px 0;
-    border-radius: 8px;
-    border: 2px solid #e9ecef;
+	background: #f8f9fa;
+	padding: 20px;
+	margin: 20px 0;
+	border-radius: 8px;
+	border: 2px solid #e9ecef;
   }
-  
+
   .admin-section h3 {
-    color: #2c3e50;
-    margin: 0 0 20px 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+	color: #2c3e50;
+	margin: 0 0 20px 0;
+	display: flex;
+	align-items: center;
+	gap: 10px;
   }
-  
+
   .users-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	gap: 15px;
+	margin-bottom: 20px;
   }
-  
+
   .user-card {
-    background: white;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+	background: white;
+	padding: 15px;
+	border-radius: 8px;
+	border: 1px solid #dee2e6;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
   }
-  
+
   .user-details h4 {
-    margin: 0 0 5px 0;
-    color: #2c3e50;
+	margin: 0 0 5px 0;
+	color: #2c3e50;
   }
-  
+
   .user-actions {
-    display: flex;
-    gap: 8px;
+	display: flex;
+	gap: 8px;
   }
-  
+
   .user-actions button {
-    padding: 6px 12px;
-    font-size: 12px;
-    min-width: auto;
+	padding: 6px 12px;
+	font-size: 12px;
+	min-width: auto;
   }
-  
+
   .section {
-    padding: 30px;
-    transition: all 0.3s ease;
+	padding: 30px;
+	transition: all 0.3s ease;
   }
-  
+
   /* Inventory Lists */
   .inventory-lists {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 20px;
-    margin: 20px 0;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+	gap: 20px;
+	margin: 20px 0;
   }
-  
+
   .inventory-card {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    overflow: hidden;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
+	background: white;
+	border-radius: 12px;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+	overflow: hidden;
+	transition: all 0.3s ease;
+	border: 2px solid transparent;
   }
-  
+
   .inventory-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    border-color: #3498db;
+	transform: translateY(-4px);
+	box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+	border-color: #3498db;
   }
-  
+
   .inventory-card-header {
-    background: linear-gradient(135deg, #3498db, #2980b9);
-    color: white;
-    padding: 20px;
-    position: relative;
+	background: linear-gradient(135deg, #3498db, #2980b9);
+	color: white;
+	padding: 20px;
+	position: relative;
   }
-  
+
   .inventory-card-header h3 {
-    margin: 0 0 10px 0;
-    font-size: 1.2em;
+	margin: 0 0 10px 0;
+	font-size: 1.2em;
   }
-  
+
   .inventory-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.9em;
-    opacity: 0.9;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 0.9em;
+	opacity: 0.9;
   }
-  
+
   .status-badge {
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    padding: 4px 12px;
-    border-radius: 15px;
-    font-size: 0.8em;
-    font-weight: bold;
+	position: absolute;
+	top: 15px;
+	left: 15px;
+	padding: 4px 12px;
+	border-radius: 15px;
+	font-size: 0.8em;
+	font-weight: bold;
   }
-  
+
   .status-badge.completed { background: #2ecc71; color: white; }
   .status-badge.in-progress { background: #f39c12; color: white; }
   .status-badge.pending { background: #95a5a6; color: white; }
-  
+
   .inventory-card-body {
-    padding: 20px;
+	padding: 20px;
   }
-  
+
   .inventory-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    margin-bottom: 20px;
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 15px;
+	margin-bottom: 20px;
   }
-  
+
   .mini-stat {
-    text-align: center;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
+	text-align: center;
+	padding: 15px;
+	background: #f8f9fa;
+	border-radius: 8px;
   }
-  
+
   .mini-stat-number {
-    font-size: 1.8em;
-    font-weight: bold;
-    color: #2c3e50;
-    margin: 5px 0;
+	font-size: 1.8em;
+	font-weight: bold;
+	color: #2c3e50;
+	margin: 5px 0;
   }
-  
+
   .mini-stat-label {
-    font-size: 0.8em;
-    color: #7f8c8d;
-    text-transform: uppercase;
+	font-size: 0.8em;
+	color: #7f8c8d;
+	text-transform: uppercase;
   }
-  
+
   .inventory-actions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
   }
-  
+
   .inventory-actions button {
-    flex: 1;
-    min-width: 120px;
-    padding: 10px 15px;
-    font-size: 14px;
+	flex: 1;
+	min-width: 120px;
+	padding: 10px 15px;
+	font-size: 14px;
   }
-  
+
   .progress-bar {
-    width: 100%;
-    height: 8px;
-    background: #ecf0f1;
-    border-radius: 4px;
-    margin: 20px 0;
-    overflow: hidden;
+	width: 100%;
+	height: 8px;
+	background: #ecf0f1;
+	border-radius: 4px;
+	margin: 20px 0;
+	overflow: hidden;
   }
-  
+
   .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #3498db, #2ecc71);
-    border-radius: 4px;
-    width: 0%;
-    transition: width 0.5s ease;
+	height: 100%;
+	background: linear-gradient(90deg, #3498db, #2ecc71);
+	border-radius: 4px;
+	width: 0%;
+	transition: width 0.5s ease;
   }
-  
-  table { 
-    border-collapse: collapse; 
-    width: 100%; 
-    background: white; 
-    margin: 20px 0;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+
+  table {
+	border-collapse: collapse;
+	width: 100%;
+	background: white;
+	margin: 20px 0;
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 4px 6px rgba(0,0,0,0.1);
   }
-  
-  th, td { 
-    border: none; 
-    padding: 15px 12px; 
-    text-align: center; 
-    border-bottom: 1px solid #ecf0f1;
+
+  th, td {
+	border: none;
+	padding: 15px 12px;
+	text-align: center;
+	border-bottom: 1px solid #ecf0f1;
+	vertical-align: middle;
   }
-  
-  th { 
-    background: linear-gradient(135deg, #3498db, #2980b9);
-    color: white;
-    font-weight: 500;
-    text-transform: uppercase;
-    font-size: 0.9em;
-    letter-spacing: 0.5px;
+
+  th {
+	background: linear-gradient(135deg, #3498db, #2980b9);
+	color: white;
+	font-weight: 500;
+	text-transform: uppercase;
+	font-size: 0.9em;
+	letter-spacing: 0.5px;
   }
-  
+
   tbody tr { transition: all 0.3s ease; }
   tbody tr:hover { background: #f8f9fa; transform: translateY(-1px); }
-  
+
   /* == CORRECTED CSS RULE == */
   /* This rule now ONLY applies to inputs inside the inventory table */
-  #inventoryTable input[type=number], 
-  #inventoryTable input[type=text] { 
-    width: 80px; 
-    text-align: center; 
-    padding: 8px;
-    border: 2px solid #bdc3c7;
-    border-radius: 6px;
-    font-size: 14px;
-    transition: all 0.3s ease;
+  #inventoryTable input[type=number],
+  #morningCountTable input[type=number],
+  #liveUsageTable input[type=number],
+  #inventoryTable input[type=text] {
+	width: 80px;
+	text-align: center;
+	padding: 8px;
+	border: 2px solid #bdc3c7;
+	border-radius: 6px;
+	font-size: 14px;
+	transition: all 0.3s ease;
   }
-  
+
   #inventoryTable input[type=text] { width: 200px; }
   /* ========================= */
-  
+
   input:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+	outline: none;
+	border-color: #3498db;
+	box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
   }
-  
-  .shortage { 
-    background: linear-gradient(135deg, #ff7675, #fd79a8) !important; 
-    color: white;
-    animation: pulse 2s infinite;
+
+  .shortage {
+	background: linear-gradient(135deg, #ff7675, #fd79a8) !important;
+	color: white;
+	animation: pulse 2s infinite;
   }
-  
-  .ok { 
-    background: linear-gradient(135deg, #00b894, #00cec9) !important; 
-    color: white;
+
+  .ok {
+	background: linear-gradient(135deg, #00b894, #00cec9) !important;
+	color: white;
   }
-  
+
   @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.8; }
-    100% { opacity: 1; }
+	0% { opacity: 1; }
+	50% { opacity: 0.8; }
+	100% { opacity: 1; }
   }
-  
+
   .buttons {
-    text-align: center;
-    margin: 30px 0;
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    flex-wrap: wrap;
+	text-align: center;
+	margin: 30px 0;
+	display: flex;
+	gap: 15px;
+	justify-content: center;
+	flex-wrap: wrap;
   }
-  
-  button { 
-    padding: 12px 25px; 
-    font-size: 16px; 
-    cursor: pointer;
-    border: none;
-    border-radius: 25px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    min-width: 150px;
+
+  button {
+	padding: 12px 25px;
+	font-size: 16px;
+	cursor: pointer;
+	border: none;
+	border-radius: 25px;
+	font-weight: 500;
+	transition: all 0.3s ease;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	min-width: 150px;
   }
-  
+
   .btn-primary {
-    background: linear-gradient(135deg, #3498db, #2980b9);
-    color: white;
+	background: linear-gradient(135deg, #3498db, #2980b9);
+	color: white;
   }
-  
+
   .btn-success {
-    background: linear-gradient(135deg, #27ae60, #2ecc71);
-    color: white;
+	background: linear-gradient(135deg, #27ae60, #2ecc71);
+	color: white;
   }
-  
+
   .btn-secondary {
-    background: linear-gradient(135deg, #95a5a6, #7f8c8d);
-    color: white;
+	background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+	color: white;
   }
-  
+
   .btn-danger {
-    background: linear-gradient(135deg, #e74c3c, #c0392b);
-    color: white;
+	background: linear-gradient(135deg, #e74c3c, #c0392b);
+	color: white;
   }
-  
+
   .btn-warning {
-    background: linear-gradient(135deg, #f39c12, #e67e22);
-    color: white;
+	background: linear-gradient(135deg, #f39c12, #e67e22);
+	color: white;
   }
-  
-  button:hover { 
-    transform: translateY(-2px); 
-    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+
+  button:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 8px 20px rgba(0,0,0,0.2);
   }
-  
+
   button:active { transform: translateY(0); }
-  
+
   button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
+	opacity: 0.6;
+	cursor: not-allowed;
+	transform: none;
   }
-  
+
   .hidden { display: none; }
-  
+
   .stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin: 20px 0;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 20px;
+	margin: 20px 0;
   }
-  
+
   .stat-card {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    padding: 20px;
-    border-radius: 10px;
-    text-align: center;
-    border: 2px solid transparent;
-    transition: all 0.3s ease;
+	background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+	padding: 20px;
+	border-radius: 10px;
+	text-align: center;
+	border: 2px solid transparent;
+	transition: all 0.3s ease;
   }
-  
+
   .stat-card:hover {
-    border-color: #3498db;
-    transform: translateY(-2px);
+	border-color: #3498db;
+	transform: translateY(-2px);
   }
-  
+
   .stat-number {
-    font-size: 2.5em;
-    font-weight: bold;
-    color: #2c3e50;
-    margin: 10px 0;
+	font-size: 2.5em;
+	font-weight: bold;
+	color: #2c3e50;
+	margin: 10px 0;
   }
-  
+
   .stat-label {
-    color: #7f8c8d;
-    font-weight: 500;
-    text-transform: uppercase;
-    font-size: 0.9em;
+	color: #7f8c8d;
+	font-weight: 500;
+	text-transform: uppercase;
+	font-size: 0.9em;
   }
-  
+
   .notification {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #2ecc71;
-    color: white;
-    padding: 15px 25px;
-    border-radius: 25px;
-    font-weight: 500;
-    z-index: 1000;
-    opacity: 0;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+	position: fixed;
+	top: 20px;
+	left: 50%;
+	transform: translateX(-50%);
+	background: #2ecc71;
+	color: white;
+	padding: 15px 25px;
+	border-radius: 25px;
+	font-weight: 500;
+	z-index: 1000;
+	opacity: 0;
+	transition: all 0.3s ease;
+	box-shadow: 0 4px 15px rgba(0,0,0,0.2);
   }
-  
+
   .notification.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
+	opacity: 1;
+	transform: translateX(-50%) translateY(0);
   }
-  
+
   .notification.error {
-    background: #e74c3c;
+	background: #e74c3c;
   }
-  
+
   .checkbox-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+	display: flex;
+	align-items: center;
+	justify-content: center;
   }
-  
+
   input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    transform: scale(1.2);
+	width: 20px;
+	height: 20px;
+	cursor: pointer;
+	transform: scale(1.2);
   }
-  
+
   .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: #7f8c8d;
+	text-align: center;
+	padding: 60px 20px;
+	color: #7f8c8d;
   }
-  
+
   .empty-state h3 {
-    margin: 20px 0 10px 0;
-    color: #95a5a6;
+	margin: 20px 0 10px 0;
+	color: #95a5a6;
   }
-  
+
   .empty-state p {
-    margin: 10px 0;
-    font-size: 1.1em;
+	margin: 10px 0;
+	font-size: 1.1em;
   }
-  
+
+  .info-box {
+	background: #e9f5ff;
+	border-left: 5px solid #3498db;
+	padding: 15px 20px;
+	margin: 20px 0;
+	border-radius: 4px;
+	color: #2c3e50;
+  }
+
   @media (max-width: 768px) {
-    .container, .login-container { margin: 10px; border-radius: 8px; }
-    .section, .login-form { padding: 20px; }
-    h1 { font-size: 2em; }
-    h2 { font-size: 1.5em; }
-    table { font-size: 14px; }
-    th, td { padding: 10px 8px; }
-    .buttons { flex-direction: column; align-items: center; }
-    button { min-width: 200px; }
-    .stats { grid-template-columns: 1fr; }
-    .user-info { position: static; margin-bottom: 20px; }
-    .users-grid { grid-template-columns: 1fr; }
-    .inventory-lists { grid-template-columns: 1fr; }
-    .tab-navigation { flex-wrap: wrap; }
-    .inventory-actions { flex-direction: column; }
-    .inventory-actions button { min-width: auto; }
+	.container, .login-container { margin: 10px; border-radius: 8px; }
+	.section, .login-form { padding: 20px; }
+	h1 { font-size: 2em; }
+	h2 { font-size: 1.5em; }
+	table { font-size: 14px; }
+	th, td { padding: 10px 8px; }
+	.buttons { flex-direction: column; align-items: center; }
+	button { min-width: 200px; }
+	.stats { grid-template-columns: 1fr; }
+	.user-info { position: static; margin-bottom: 20px; }
+	.users-grid { grid-template-columns: 1fr; }
+	.inventory-lists { grid-template-columns: 1fr; }
+	.tab-navigation { flex-wrap: wrap; }
+	.inventory-actions { flex-direction: column; }
+	.inventory-actions button { min-width: auto; }
   }
 </style>
 </head>
@@ -601,164 +613,212 @@
 
 <div id="loginScreen" class="login-container">
   <div class="login-header">
-    <h1>התחברות למערכת</h1>
-    <p>מערכת בדיקת מלאי - אבטיפוס</p>
+	<h1>התחברות למערכת</h1>
+	<p>מערכת בדיקת מלאי - אבטיפוס</p>
   </div>
   <div class="login-form">
-    <div id="loginError" class="error-message hidden"></div>
-    <form onsubmit="login(event)">
-      <div class="form-group">
-        <label for="username">שם משתמש:</label>
-        <input type="text" id="username" name="username" required>
-      </div>
-      <div class="form-group">
-        <label for="password">סיסמה:</label>
-        <input type="password" id="password" name="password" required>
-      </div>
-      <div class="buttons">
-        <button type="submit" class="btn-primary">התחבר</button>
-      </div>
-    </form>
+	<div id="loginError" class="error-message hidden"></div>
+	<form onsubmit="login(event)">
+	  <div class="form-group">
+		<label for="username">שם משתמש:</label>
+		<input type="text" id="username" name="username" required>
+	  </div>
+	  <div class="form-group">
+		<label for="password">סיסמה:</label>
+		<input type="password" id="password" name="password" required>
+	  </div>
+	  <div class="buttons">
+		<button type="submit" class="btn-primary">התחבר</button>
+	  </div>
+	</form>
   </div>
 </div>
 
 <div id="mainApp" class="container hidden">
   <div class="header">
-    <div class="user-info">
-      <div class="user-badge">
-        <span id="currentUser">משתמש</span>
-        <span class="role-badge" id="currentRole">worker</span>
-      </div>
-      <button class="logout-btn" onclick="logout()">התנתק</button>
-    </div>
-    <h1>מערכת בדיקת מלאי</h1>
+	<div class="user-info">
+	  <div class="user-badge">
+		<span id="currentUser">משתמש</span>
+		<span class="role-badge" id="currentRole">worker</span>
+	  </div>
+	  <button class="logout-btn" onclick="logout()">התנתק</button>
+	</div>
+	<h1>מערכת בדיקת מלאי</h1>
   </div>
 
   <div class="tab-navigation">
-    <button class="tab-button active" onclick="switchTab('counting')" id="countingTab">
-      📝 ספירת מלאי חדשה
-    </button>
-    <button class="tab-button" onclick="switchTab('lists')" id="listsTab">
-      📋 רשימות קיימות
-      <span class="badge" id="listsBadge">0</span>
-    </button>
-    <button class="tab-button" onclick="switchTab('storage')" id="storageTab">
-      🏪 מחסן
-      <span class="badge" id="storageBadge">0</span>
-    </button>
-    <button class="tab-button hidden" onclick="switchTab('admin')" id="adminTab">
-      👥 ניהול משתמשים
-    </button>
-    <button class="tab-button hidden" onclick="switchTab('items')" id="itemsTab">
-      ⚙️ ניהול פריטים
-    </button>
+	<button class="tab-button active" onclick="switchTab('counting')" id="countingTab">
+	  📝 ספירת מלאי חדשה
+	</button>
+	<button class="tab-button" onclick="switchTab('morningCount')" id="morningCountTab">
+	  ☀️ ספירת בוקר
+	</button>
+	<button class="tab-button" onclick="switchTab('liveUsage')" id="liveUsageTab">
+	  🔄 שימוש שוטף
+	</button>
+	<button class="tab-button" onclick="switchTab('lists')" id="listsTab">
+	  📋 רשימות קיימות
+	  <span class="badge" id="listsBadge">0</span>
+	</button>
+	<button class="tab-button" onclick="switchTab('storage')" id="storageTab">
+	  🏪 מחסן
+	  <span class="badge" id="storageBadge">0</span>
+	</button>
+	<button class="tab-button hidden" onclick="switchTab('admin')" id="adminTab">
+	  👥 ניהול משתמשים
+	</button>
+	<button class="tab-button hidden" onclick="switchTab('items')" id="itemsTab">
+	  ⚙️ ניהול פריטים
+	</button>
   </div>
 
   <div id="countingSection" class="section">
-    <h2>ספירת מלאי חדשה</h2>
-    
-    <div class="form-group" style="max-width: 400px;">
-      <label for="listName">שם הרשימה:</label>
-      <input type="text" id="listName" placeholder="לדוגמה: ספירה בוקר - 21/08/2025">
-    </div>
-    
-    <div class="progress-bar">
-      <div class="progress-fill" id="progressFill"></div>
-    </div>
-    
-    <div class="stats" id="statsContainer">
-       </div>
-    
-    <table id="inventoryTable">
-      <thead>
-        <tr>
-          <th>פריט</th>
-          <th>יחידה</th>
-          <th>כמות יעד</th>
-          <th>כמות נוכחית</th>
-          <th>חוסר</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    
-    <div class="buttons">
-      <button class="btn-primary" onclick="calculateShortages()">חשב חוסרים</button>
-      <button class="btn-secondary" onclick="resetCurrentInventory()" id="resetBtn">איפוס</button>
-      <button class="btn-success" id="saveBtn" onclick="saveInventoryList()" disabled>שמור רשימה</button>
-    </div>
+	<h2>ספירת מלאי חדשה</h2>
+	<div class="info-box">סמן ב-✓ רק את הפריטים שדורשים בדיקה והזן את הכמות הנוכחית שלהם.</div>
+	<div class="form-group" style="max-width: 400px;">
+	  <label for="listName">שם הרשימה:</label>
+	  <input type="text" id="listName" placeholder="לדוגמה: ספירה בוקר - 21/08/2025">
+	</div>
+
+	<div class="progress-bar">
+	  <div class="progress-fill" id="progressFill"></div>
+	</div>
+
+	<div class="stats" id="statsContainer">
+	   </div>
+
+	<table id="inventoryTable">
+	  <thead>
+		<tr>
+		  <th>בדיקה</th>
+		  <th>פריט</th>
+		  <th>יחידה</th>
+		  <th>כמות יעד</th>
+		  <th>כמות נוכחית</th>
+		  <th>חוסר</th>
+		</tr>
+	  </thead>
+	  <tbody></tbody>
+	</table>
+
+	<div class="buttons">
+	  <button class="btn-primary" onclick="calculateShortages()">חשב חוסרים</button>
+	  <button class="btn-secondary" onclick="resetCurrentInventory()" id="resetBtn">איפוס</button>
+	  <button class="btn-success" id="saveBtn" onclick="saveInventoryList()" disabled>שמור רשימה</button>
+	</div>
+  </div>
+
+  <div id="morningCountSection" class="section hidden">
+	<h2>ספירת מלאי בוקר</h2>
+	<div class="info-box">כאן מבצעים ספירה מלאה של כל הפריטים בתחילת היום. הנתונים ישמשו לחישוב אוטומטי של החוסרים בסוף היום.</div>
+	<p>סטטוס ספירת הבוקר להיום (<span id="todayDate"></span>): <b id="morningCountStatus">לא בוצעה</b></p>
+	<table id="morningCountTable">
+	  <thead>
+		<tr>
+		  <th>פריט</th>
+		  <th>יחידה</th>
+		  <th>כמות נוכחית</th>
+		</tr>
+	  </thead>
+	  <tbody></tbody>
+	</table>
+	<div class="buttons">
+	  <button class="btn-success" id="saveMorningCountBtn" onclick="saveMorningCount()">שמור ספירת בוקר</button>
+	</div>
+  </div>
+
+  <div id="liveUsageSection" class="section hidden">
+	<h2>רישום שימוש שוטף</h2>
+	<div class="info-box">בכל פעם שאתם משתמשים בפריט מהמלאי, רשמו כאן כמה יחידות נלקחו. בסוף היום, המערכת תיצור רשימת חוסרים באופן אוטומטי.</div>
+	<div id="liveUsagePrerequisite"></div>
+	<div id="liveUsageContent" class="hidden">
+	  <table id="liveUsageTable">
+		<thead>
+		  <tr>
+			<th>פריט</th>
+			<th>כמות התחלתית</th>
+			<th>שימוש היום</th>
+			<th>כמות נוכחית</th>
+			<th>פעולת שימוש</th>
+		  </tr>
+		</thead>
+		<tbody></tbody>
+	  </table>
+	  <div class="buttons">
+		<button class="btn-primary" onclick="generateEndOfDayList()">צור רשימת סוף יום</button>
+	  </div>
+	</div>
   </div>
 
   <div id="listsSection" class="section hidden">
-    <h2>רשימות מלאי קיימות</h2>
-    <div class="inventory-lists" id="inventoryLists">
-      </div>
+	<h2>רשימות מלאי קיימות</h2>
+	<div class="inventory-lists" id="inventoryLists">
+	  </div>
   </div>
 
   <div id="storageSection" class="section hidden">
-    <h2>צפייה במחסן - פריטים לאיסוף</h2>
-    <div id="storageContent">
-      </div>
+	<h2>צפייה במחסן - פריטים לאיסוף</h2>
+	<div id="storageContent">
+	  </div>
   </div>
 
   <div id="adminSection" class="section hidden">
-    <h2>ניהול משתמשים</h2>
-    <div class="admin-section">
-      <h3>🔧 הוסף משתמש חדש</h3>
-      
-      <div class="form-group">
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end;">
-          <input type="text" id="newUsername" placeholder="שם משתמש">
-          <input type="password" id="newPassword" placeholder="סיסמה">
-          <select id="newRole">
-            <option value="worker">עובד</option>
-            <option value="owner">בעלים</option>
-          </select>
-          <button class="btn-success" onclick="addUser()">הוסף</button>
-        </div>
-      </div>
-      
-      <div class="users-grid" id="usersGrid"></div>
-    </div>
+	<h2>ניהול משתמשים</h2>
+	<div class="admin-section">
+	  <h3>🔧 הוסף משתמש חדש</h3>
+
+	  <div class="form-group">
+		<div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end;">
+		  <input type="text" id="newUsername" placeholder="שם משתמש">
+		  <input type="password" id="newPassword" placeholder="סיסמה">
+		  <select id="newRole">
+			<option value="worker">עובד</option>
+			<option value="owner">בעלים</option>
+		  </select>
+		  <button class="btn-success" onclick="addUser()">הוסף</button>
+		</div>
+	  </div>
+
+	  <div class="users-grid" id="usersGrid"></div>
+	</div>
   </div>
 
   <div id="itemsSection" class="section hidden">
-    <h2>ניהול פריטי מלאי</h2>
-    <div class="admin-section">
-      <h3>➕ הוסף פריט חדש</h3>
-      <div class="form-group">
-        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: end;">
-          <input type="text" id="newItemName" placeholder="שם פריט">
-          <input type="text" id="newItemUnit" placeholder="יחידת מידה (למשל, שרבול)">
-          <input type="number" id="newItemTarget" placeholder="כמות יעד">
-          <button class="btn-success" onclick="addItem()">הוסף פריט</button>
-        </div>
-      </div>
-    </div>
-    <div id="masterItemsList">
-        </div>
+	<h2>ניהול פריטי מלאי</h2>
+	<div class="admin-section">
+	  <h3>➕ הוסף פריט חדש</h3>
+	  <div class="form-group">
+		<div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: end;">
+		  <input type="text" id="newItemName" placeholder="שם פריט">
+		  <input type="text" id="newItemUnit" placeholder="יחידת מידה (למשל, שרבול)">
+		  <input type="number" id="newItemTarget" placeholder="כמות יעד">
+		  <button class="btn-success" onclick="addItem()">הוסף פריט</button>
+		</div>
+	  </div>
+	</div>
+	<div id="masterItemsList">
+		</div>
   </div>
 
 </div>
 
 <div class="notification" id="notification"></div>
 
-<!-- ===== Module Script: Firebase + App logic ===== -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
   import {
-    getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc,
-    setDoc, updateDoc, getDoc, getDocs, query, orderBy
+	getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc,
+	setDoc, updateDoc, getDoc, getDocs, query, orderBy
   } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
   // ---------- Firebase config (you provided this) ----------
   const firebaseConfig = {
-    apiKey: "AIzaSyBA0xBgXIKGOGAsQIR1P0oPSV6BRQRVUDA",
-    authDomain: "potatostarsite.firebaseapp.com",
-    projectId: "potatostarsite",
-    storageBucket: "potatostarsite.firebasestorage.app",
-    messagingSenderId: "261387693142",
-    appId: "1:261387693142:web:310d97acab79d3d8529ff7"
+	apiKey: "AIzaSyBA0xBgXIKGOGAsQIR1P0oPSV6BRQRVUDA",
+	authDomain: "potatostarsite.firebaseapp.com",
+	projectId: "potatostarsite",
+	storageBucket: "potatostarsite.firebasestorage.app",
+	messagingSenderId: "261387693142",
+	appId: "1:261387693142:web:310d97acab79d3d8529ff7"
   };
 
   const app = initializeApp(firebaseConfig);
@@ -768,633 +828,804 @@
   const usersRef = collection(db, 'users');
   const itemsRef = collection(db, 'items');
   const listsRef = collection(db, 'inventoryLists');
+  const dailyCountsRef = collection(db, 'dailyCounts'); // NEW: For morning/live counts
 
   // Local state
-  let users = {}; // keyed by username doc id
-  let items = []; // array of {id, name, unit, target}
-  let inventoryLists = []; // array of {id, ...}
+  let users = {};
+  let items = [];
+  let inventoryLists = [];
   let currentUser = null;
   let currentTab = 'counting';
+  let todaysCountData = null; // NEW: To hold today's live data
 
   // DOM ready
   document.addEventListener('DOMContentLoaded', () => {
-    // Subscribe to Firestore collections (realtime)
-    subscribeToUsers();
-    subscribeToItems();
-    subscribeToLists();
-
-    // focus username input
-    document.getElementById('username').focus();
+	subscribeToUsers();
+	subscribeToItems();
+	subscribeToLists();
+	document.getElementById('username').focus();
   });
 
   // ---------- Realtime subscriptions ----------
   function subscribeToUsers() {
-    onSnapshot(usersRef, async snapshot => {
-      if (snapshot.empty) {
-        // Seed default users (only when empty)
-        const defaultUsers = {
-          'admin': { password: 'admin123', role: 'owner', name: 'מנהל ראשי' },
-          'owner1': { password: 'owner123', role: 'owner', name: 'בעלים 1' },
-          'worker1': { password: 'worker123', role: 'worker', name: 'עובד 1' }
-        };
-        for (const [username, data] of Object.entries(defaultUsers)) {
-          await setDoc(doc(db, 'users', username), data);
-        }
-        // we'll get another snapshot after seeding
-        return;
-      }
-      users = {};
-      snapshot.docs.forEach(d => {
-        users[d.id] = d.data();
-      });
-      // If admin is not present locally, nothing else to do; UI that needs users will re-render when opened
-      // Keep console demo credentials
-      console.log('Demo Credentials:');
-      console.log('Owner: admin / admin123');
-      console.log('Worker: worker1 / worker123');
-      // If current app is showing users grid, refresh it
-      if (currentTab === 'admin') loadUsersGrid();
-    }, err => console.error('Users snapshot error', err));
+	onSnapshot(usersRef, async snapshot => {
+	  if (snapshot.empty) {
+		const defaultUsers = {
+		  'admin': { password: 'admin123', role: 'owner', name: 'מנהל ראשי' },
+		  'owner1': { password: 'owner123', role: 'owner', name: 'בעלים 1' },
+		  'worker1': { password: 'worker123', role: 'worker', name: 'עובד 1' }
+		};
+		for (const [username, data] of Object.entries(defaultUsers)) {
+		  await setDoc(doc(db, 'users', username), data);
+		}
+		return;
+	  }
+	  users = {};
+	  snapshot.docs.forEach(d => {
+		users[d.id] = d.data();
+	  });
+	  console.log('Demo Credentials:');
+	  console.log('Owner: admin / admin123');
+	  console.log('Worker: worker1 / worker123');
+	  if (currentTab === 'admin') loadUsersGrid();
+	}, err => console.error('Users snapshot error', err));
   }
 
   function subscribeToItems() {
-    onSnapshot(itemsRef, async snapshot => {
-      if (snapshot.empty) {
-        // Seed default items (only when empty)
-        const defaultItems = [
-          ["חמגשית חומה", "שרבול", 1], ["פרגמנט פוטטוס", "חבילה", 1], ["פרגמנט מגשים", "חבילה", 1],
-          ["קערה חומה", "שרבול", 1], ["מכסה תירס גדול", "שרבולים", 3], ["מכסה תירס בינוני", "שרבולים", 2],
-          ["קוקוט רוטב 2 אוז", "שרבולים", 4], ["מכסה רוטב 2 אוז", "שרבולים", 4], ["מכסה קוקוט אלפרדו", "שרבולים", 4],
-          ["מכסה לקערה חומה", "שרבול", 1], ["קוקוט 1 אוז", "שרבולים", 5], ["סחוג", "קופסא", 1],
-          ["שום כתוש", "קופסא", 1], ["מפיות", "חבילה", 1], ["כוסות שתייה", "שרבולים", 2],
-          ["כוס שתייה חמה", "שרבול", 1], ["קשיות", "חבילה", 1], ["שקיות לבנות", "חבילה", 1],
-          ["שקיות זבל", "גליל", 1], ["שקיות גופה", "גליל", 1], ["שקיות TA", "חבילות", 4],
-          ["מלח מנות", "חבילה", 1], ["פלפל מנות", "חבילה", 1], ["מזלגונים מעץ", "קרטון", 1],
-          ["מזלגות רגיל", "קרטון", 1], ["כפיות", "קרטון", 1]
-        ];
-        for (const it of defaultItems) {
-          await addDoc(itemsRef, { name: it[0], unit: it[1], target: it[2] });
-        }
-        return;
-      }
-      items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Refresh UI pieces that depend on items
-      loadMasterItemsList();
-      initializeInventoryTable();
-    }, err => console.error('Items snapshot error', err));
+	onSnapshot(query(itemsRef, orderBy("name")), async snapshot => { // Order by name
+	  if (snapshot.empty) {
+		const defaultItems = [
+		  ["חמגשית חומה", "שרבול", 1], ["פרגמנט פוטטוס", "חבילה", 1], ["פרגמנט מגשים", "חבילה", 1],
+		  ["קערה חומה", "שרבול", 1], ["מכסה תירס גדול", "שרבולים", 3], ["מכסה תירס בינוני", "שרבולים", 2],
+		  ["קוקוט רוטב 2 אוז", "שרבולים", 4], ["מכסה רוטב 2 אוז", "שרבולים", 4], ["מכסה קוקוט אלפרדו", "שרבולים", 4],
+		  ["מכסה לקערה חומה", "שרבול", 1], ["קוקוט 1 אוז", "שרבולים", 5], ["סחוג", "קופסא", 1],
+		  ["שום כתוש", "קופסא", 1], ["מפיות", "חבילה", 1], ["כוסות שתייה", "שרבולים", 2],
+		  ["כוס שתייה חמה", "שרבול", 1], ["קשיות", "חבילה", 1], ["שקיות לבנות", "חבילה", 1],
+		  ["שקיות זבל", "גליל", 1], ["שקיות גופה", "גליל", 1], ["שקיות TA", "חבילות", 4],
+		  ["מלח מנות", "חבילה", 1], ["פלפל מנות", "חבילה", 1], ["מזלגונים מעץ", "קרטון", 1],
+		  ["מזלגות רגיל", "קרטון", 1], ["כפיות", "קרטון", 1]
+		];
+		for (const it of defaultItems) {
+		  await addDoc(itemsRef, { name: it[0], unit: it[1], target: it[2] });
+		}
+		return;
+	  }
+	  items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+	  // Refresh UI pieces that depend on items
+	  if (currentUser) {
+		  initializeAllTables();
+	  }
+	}, err => console.error('Items snapshot error', err));
   }
 
   function subscribeToLists() {
-    // Order by createdAt descending for nicer UI
-    // For simplicity we listen to the collection (no query here)
-    onSnapshot(listsRef, snapshot => {
-      inventoryLists = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Sort descending by createdAt if available
-      inventoryLists.sort((a,b) => {
-        const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return tb - ta;
-      });
-      updateTabBadges();
-      if (currentTab === 'lists') loadInventoryLists();
-      if (currentTab === 'storage') loadStorageView();
-    }, err => console.error('Lists snapshot error', err));
+	onSnapshot(listsRef, snapshot => {
+	  inventoryLists = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+	  inventoryLists.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+	  updateTabBadges();
+	  if (currentTab === 'lists') loadInventoryLists();
+	  if (currentTab === 'storage') loadStorageView();
+	}, err => console.error('Lists snapshot error', err));
   }
+
+  // NEW: Subscribe to today's daily count document
+  function subscribeToDailyCount(dateKey) {
+	  const docRef = doc(db, 'dailyCounts', dateKey);
+	  return onSnapshot(docRef, (docSnap) => {
+		  if (docSnap.exists()) {
+			  todaysCountData = docSnap.data();
+		  } else {
+			  todaysCountData = null;
+		  }
+		  // Update relevant UI if the tab is active
+		  if (currentTab === 'morningCount') updateMorningCountUI();
+		  if (currentTab === 'liveUsage') updateLiveUsageUI();
+	  }, err => {
+		  console.error("Error listening to daily count:", err);
+		  todaysCountData = null;
+		  updateMorningCountUI();
+		  updateLiveUsageUI();
+	  });
+  }
+
+  let dailyCountUnsubscribe = null; // To hold the listener unsub function
+
 
   // ---------- TAB & UI MANAGEMENT ----------
   function switchTab(tabName) {
-    document.getElementById('countingSection').classList.add('hidden');
-    document.getElementById('listsSection').classList.add('hidden');
-    document.getElementById('storageSection').classList.add('hidden');
-    document.getElementById('adminSection').classList.add('hidden');
-    document.getElementById('itemsSection').classList.add('hidden');
-    
-    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-    
-    document.getElementById(tabName + 'Section').classList.remove('hidden');
-    document.getElementById(tabName + 'Tab').classList.add('active');
-    
-    currentTab = tabName;
+	document.querySelectorAll('.section').forEach(sec => sec.classList.add('hidden'));
+	document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
 
-    // Load content for specific tabs
-    if (tabName === 'lists') loadInventoryLists();
-    if (tabName === 'storage') loadStorageView();
-    if (tabName === 'admin') loadUsersGrid();
-    if (tabName === 'items') loadMasterItemsList();
+	document.getElementById(tabName + 'Section').classList.remove('hidden');
+	document.getElementById(tabName + 'Tab').classList.add('active');
+
+	currentTab = tabName;
+
+	// Load content for specific tabs
+	if (tabName === 'lists') loadInventoryLists();
+	if (tabName === 'storage') loadStorageView();
+	if (tabName === 'admin') loadUsersGrid();
+	if (tabName === 'items') loadMasterItemsList();
+	if (tabName === 'morningCount') updateMorningCountUI();
+	if (tabName === 'liveUsage') updateLiveUsageUI();
   }
-
-  // Expose to window for inline handlers
   window.switchTab = switchTab;
 
   // ---------- AUTHENTICATION ----------
   function login(event) {
-    event.preventDefault();
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    
-    if (users[username] && users[username].password === password) {
-      currentUser = { username: username, ...users[username] };
-      showMainApp();
-      showNotification(`ברוך הבא, ${currentUser.name}!`);
-    } else {
-      showLoginError('שם משתמש או סיסמה שגויים');
-    }
+	event.preventDefault();
+	const username = document.getElementById('username').value;
+	const password = document.getElementById('password').value;
+
+	if (users[username] && users[username].password === password) {
+	  currentUser = { username: username, ...users[username] };
+	  showMainApp();
+	  showNotification(`ברוך הבא, ${currentUser.name}!`);
+	} else {
+	  showLoginError('שם משתמש או סיסמה שגויים');
+	}
   }
   window.login = login;
 
   function logout() {
-    if (confirm('האם אתה בטוח שברצונך להתנתק?')) {
-      currentUser = null;
-      document.getElementById('loginScreen').classList.remove('hidden');
-      document.getElementById('mainApp').classList.add('hidden');
-      document.getElementById('username').value = '';
-      document.getElementById('password').value = '';
-      showNotification('התנתקת בהצלחה');
-    }
+	if (confirm('האם אתה בטוח שברצונך להתנתק?')) {
+	  currentUser = null;
+	  if (dailyCountUnsubscribe) dailyCountUnsubscribe(); // Stop listening
+	  document.getElementById('loginScreen').classList.remove('hidden');
+	  document.getElementById('mainApp').classList.add('hidden');
+	  document.getElementById('username').value = '';
+	  document.getElementById('password').value = '';
+	  showNotification('התנתקת בהצלחה');
+	}
   }
   window.logout = logout;
 
   function showMainApp() {
-    document.getElementById('loginScreen').classList.add('hidden');
-    document.getElementById('mainApp').classList.remove('hidden');
-    
-    document.getElementById('currentUser').textContent = currentUser.name;
-    const roleText = currentUser.role === 'owner' ? 'בעלים' : 'עובד';
-    document.getElementById('currentRole').textContent = roleText;
-    document.getElementById('currentRole').className = `role-badge ${currentUser.role}`;
-    
-    // Show/hide owner-only tabs and buttons
-    const ownerElements = ['adminTab', 'itemsTab', 'resetBtn'];
-    ownerElements.forEach(id => {
-        const el = document.getElementById(id);
-        if (currentUser.role === 'owner') {
-            el.classList.remove('hidden');
-            el.style.display = ''; // Use empty string to revert to default display
-        } else {
-            el.classList.add('hidden');
-            el.style.display = 'none';
-        }
-    });
+	document.getElementById('loginScreen').classList.add('hidden');
+	document.getElementById('mainApp').classList.remove('hidden');
 
-    initializeInventoryTable();
-    updateTabBadges();
-    
-    const now = new Date();
-    const defaultName = `ספירה ${now.toLocaleDateString('he-IL')} ${now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'})}`;
-    document.getElementById('listName').value = defaultName;
+	document.getElementById('currentUser').textContent = currentUser.name;
+	const roleText = currentUser.role === 'owner' ? 'בעלים' : 'עובד';
+	document.getElementById('currentRole').textContent = roleText;
+	document.getElementById('currentRole').className = `role-badge ${currentUser.role}`;
+
+	const ownerElements = ['adminTab', 'itemsTab', 'resetBtn'];
+	ownerElements.forEach(id => {
+		const el = document.getElementById(id);
+		el.style.display = currentUser.role === 'owner' ? '' : 'none';
+	});
+
+	const now = new Date();
+	const defaultName = `ספירה ${now.toLocaleDateString('he-IL')} ${now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'})}`;
+	document.getElementById('listName').value = defaultName;
+	document.getElementById('todayDate').textContent = now.toLocaleDateString('he-IL');
+
+	// Initialize all tables and start listening to today's data
+	initializeAllTables();
+	if (dailyCountUnsubscribe) dailyCountUnsubscribe();
+	dailyCountUnsubscribe = subscribeToDailyCount(getTodayDateKey());
+	updateTabBadges();
   }
 
-  function showLoginError(message) {
-    const errorDiv = document.getElementById('loginError');
-    errorDiv.textContent = message;
-    errorDiv.classList.remove('hidden');
-    setTimeout(() => { errorDiv.classList.add('hidden'); }, 3000);
+  function initializeAllTables() {
+	initializeInventoryTable();
+	initializeMorningCountTable();
+	initializeLiveUsageTable();
+	loadMasterItemsList();
   }
 
-  // ---------- USER MANAGEMENT (OWNER) ----------
-  async function addUser() {
-    if (!currentUser || currentUser.role !== 'owner') {
-      showNotification('רק בעלים יכולים להוסיף משתמשים', 'error');
-      return;
-    }
-    const username = document.getElementById('newUsername').value.trim();
-    const password = document.getElementById('newPassword').value;
-    const role = document.getElementById('newRole').value;
-    
-    if (!username || !password) {
-      showNotification('יש למלא שם משתמש וסיסמה', 'error');
-      return;
-    }
-    if (users[username]) {
-      showNotification('שם המשתמש כבר קיים', 'error');
-      return;
-    }
-    
-    await setDoc(doc(db, 'users', username), { password, role, name: username });
-    document.getElementById('newUsername').value = '';
-    document.getElementById('newPassword').value = '';
-    showNotification('המשתמש נוסף בהצלחה');
-  }
-  window.addUser = addUser;
-
-  async function deleteUser(username) {
-    if (!currentUser || currentUser.role !== 'owner' || username === currentUser.username) return;
-    if (confirm(`האם אתה בטוח שברצונך למחוק את המשתמש "${username}"?`)) {
-      await deleteDoc(doc(db, 'users', username));
-      showNotification('המשתמש נמחק בהצלחה');
-    }
-  }
-  window.deleteUser = deleteUser;
-
-  async function toggleUserRole(username) {
-    if (!currentUser || currentUser.role !== 'owner' || username === currentUser.username) return;
-    const newRole = users[username].role === 'owner' ? 'worker' : 'owner';
-    await updateDoc(doc(db, 'users', username), { role: newRole });
-    showNotification('תפקיד המשתמש שונה בהצלחה');
-  }
-  window.toggleUserRole = toggleUserRole;
-
-  function loadUsersGrid() {
-    const grid = document.getElementById('usersGrid');
-    const entries = Object.entries(users);
-    if (entries.length === 0) {
-      grid.innerHTML = `<div class="empty-state"><h3>אין משתמשים</h3></div>`;
-      return;
-    }
-    grid.innerHTML = entries.map(([username, user]) => `
-      <div class="user-card">
-        <div class="user-details">
-          <h4>${user.name}</h4>
-          <span class="role-badge ${user.role}">${user.role === 'owner' ? 'בעלים' : 'עובד'}</span>
-        </div>
-        <div class="user-actions">
-          ${username !== (currentUser && currentUser.username) ? `
-            <button class="btn-warning" onclick="toggleUserRole('${username}')">
-              ${user.role === 'owner' ? 'הפוך לעובד' : 'הפוך לבעלים'}
-            </button>
-            <button class="btn-danger" onclick="deleteUser('${username}')">מחק</button>` : 
-            '<span style="font-size: 12px; color: #7f8c8d;">(אתה)</span>'
-          }
-        </div>
-      </div>
-    `).join('');
-  }
-
-  // ---------- MASTER ITEM MANAGEMENT ----------
-  function loadMasterItemsList() {
-      const container = document.getElementById('masterItemsList');
-      if (!items || items.length === 0) {
-        container.innerHTML = `<div class="empty-state"><h3>אין פריטים ברשימה הראשית</h3></div>`;
-        return;
-      }
-      container.innerHTML = `
-          <table>
-              <thead>
-                  <tr>
-                      <th>שם פריט</th>
-                      <th>יחידה</th>
-                      <th>כמות יעד</th>
-                      <th>פעולות</th>
-                  </tr>
-              </thead>
-              <tbody>
-                  ${items.map((item) => `
-                      <tr>
-                          <td>${item.name}</td>
-                          <td>${item.unit}</td>
-                          <td>${item.target}</td>
-                          <td>
-                              <button class="btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deleteItem('${item.id}')">מחק</button>
-                          </td>
-                      </tr>
-                  `).join('')}
-              </tbody>
-          </table>
-      `;
-  }
-
-  async function addItem() {
-      if (!currentUser || currentUser.role !== 'owner') {
-        showNotification('רק בעלים יכולים להוסיף פריטים', 'error');
-        return;
-      }
-      const name = document.getElementById('newItemName').value.trim();
-      const unit = document.getElementById('newItemUnit').value.trim();
-      const target = parseInt(document.getElementById('newItemTarget').value, 10);
-
-      if (!name || !unit || isNaN(target) || target < 0) {
-          showNotification('יש למלא את כל השדות כראוי', 'error');
-          return;
-      }
-
-      await addDoc(itemsRef, { name, unit, target });
-      document.getElementById('newItemName').value = '';
-      document.getElementById('newItemUnit').value = '';
-      document.getElementById('newItemTarget').value = '';
-      showNotification('הפריט נוסף בהצלחה');
-  }
-  window.addItem = addItem;
-
-  async function deleteItem(itemId) {
-      if (!currentUser || currentUser.role !== 'owner') return;
-      const item = items.find(i => i.id === itemId);
-      if (!item) return;
-      if (confirm(`האם אתה בטוח שברצונך למחוק את הפריט "${item.name}" מהרשימה הראשית?`)) {
-          await deleteDoc(doc(db, 'items', itemId));
-          showNotification('הפריט נמחק');
-      }
-  }
-  window.deleteItem = deleteItem;
-
-  // ---------- INVENTORY COUNTING ----------
+  // ---------- INVENTORY COUNTING (CHECKBOX METHOD) ----------
   function initializeInventoryTable() {
-    const tbody = document.querySelector("#inventoryTable tbody");
-    tbody.innerHTML = '';
-    
-    (items || []).forEach((item, index) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${item.name}</td>
-        <td>${item.unit}</td>
-        <td>${item.target}</td>
-        <td><input type="number" min="0" placeholder="0" oninput="updateStats()"></td>
-        <td>-</td>
-      `;
-      tbody.appendChild(tr);
-    });
-    updateStats(); // Initial call to set stats
+	const tbody = document.querySelector("#inventoryTable tbody");
+	tbody.innerHTML = (items || []).map(item => `
+	  <tr data-item-id="${item.id}">
+		<td>
+		  <div class="checkbox-container">
+			<input type="checkbox" onchange="toggleQuantityInput(this)">
+		  </div>
+		</td>
+		<td>${item.name}</td>
+		<td>${item.unit}</td>
+		<td>${item.target}</td>
+		<td><input type="number" class="current-qty-input hidden" min="0" placeholder="0" oninput="updateStats()"></td>
+		<td class="shortage-cell">-</td>
+	  </tr>
+	`).join('');
+	updateStats();
   }
   window.initializeInventoryTable = initializeInventoryTable;
 
+  function toggleQuantityInput(checkbox) {
+	const input = checkbox.closest('tr').querySelector('.current-qty-input');
+	input.classList.toggle('hidden', !checkbox.checked);
+	if (checkbox.checked) {
+	  input.focus();
+	} else {
+	  input.value = '';
+	}
+	updateStats();
+  }
+  window.toggleQuantityInput = toggleQuantityInput;
+
   function updateStats() {
-    const inputs = document.querySelectorAll('#inventoryTable tbody input[type="number"]');
-    let checkedCount = 0;
-    inputs.forEach(input => {
-      if (input.value !== '' && input.valueAsNumber >= 0) {
-        checkedCount++;
-      }
-    });
-    
-    document.getElementById('statsContainer').innerHTML = `
-        <div class="stat-card">
-          <div class="stat-number">${items.length}</div>
-          <div class="stat-label">סה"כ פריטים</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number">${checkedCount}</div>
-          <div class="stat-label">נספרו</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number" id="shortageItems">-</div>
-          <div class="stat-label">חוסרים</div>
-        </div>
-    `;
-    
-    const progress = items.length > 0 ? (checkedCount / items.length) * 100 : 0;
-    document.getElementById('progressFill').style.width = progress + '%';
+	const checkboxes = document.querySelectorAll('#inventoryTable tbody input[type="checkbox"]');
+	const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+	const progress = items.length > 0 ? (checkedCount / items.length) * 100 : 0;
+
+	document.getElementById('statsContainer').innerHTML = `
+		<div class="stat-card">
+		  <div class="stat-number">${items.length}</div>
+		  <div class="stat-label">סה"כ פריטים</div>
+		</div>
+		<div class="stat-card">
+		  <div class="stat-number">${checkedCount}</div>
+		  <div class="stat-label">נבדקו</div>
+		</div>
+		<div class="stat-card">
+		  <div class="stat-number" id="shortageItems">-</div>
+		  <div class="stat-label">חוסרים</div>
+		</div>
+	`;
+	document.getElementById('progressFill').style.width = progress + '%';
   }
   window.updateStats = updateStats;
 
   function calculateShortages() {
-    const rows = document.querySelectorAll("#inventoryTable tbody tr");
-    let shortageCount = 0;
-    
-    rows.forEach((row, i) => {
-      const target = items[i].target;
-      const current = row.cells[3].querySelector("input").valueAsNumber || 0;
-      const shortage = target - current;
-      
-      row.cells[4].textContent = shortage > 0 ? shortage : 0;
-      row.className = shortage > 0 ? "shortage" : "ok";
-      if (shortage > 0) shortageCount++;
-    });
-    
-    document.getElementById('shortageItems').textContent = shortageCount;
-    document.getElementById('saveBtn').disabled = false;
-    
-    showNotification(shortageCount > 0 ? 
-      `נמצאו ${shortageCount} פריטים עם חוסר` : 
-      'כל הפריטים במלאי מלא!'
-    );
+	const rows = document.querySelectorAll("#inventoryTable tbody tr");
+	let shortageCount = 0;
+	rows.forEach(row => {
+	  const checkbox = row.querySelector('input[type="checkbox"]');
+	  const item = items.find(i => i.id === row.dataset.itemId);
+	  if (!item) return;
+
+	  let shortage = 0;
+	  if (checkbox.checked) {
+		const current = row.querySelector(".current-qty-input").valueAsNumber || 0;
+		shortage = item.target - current;
+	  }
+
+	  const shortageCell = row.querySelector('.shortage-cell');
+	  shortageCell.textContent = shortage > 0 ? shortage : 0;
+	  row.className = shortage > 0 ? "shortage" : (checkbox.checked ? "ok" : "");
+	  if (shortage > 0) shortageCount++;
+	});
+
+	document.getElementById('shortageItems').textContent = shortageCount;
+	document.getElementById('saveBtn').disabled = false;
+	showNotification(shortageCount > 0 ? `נמצאו ${shortageCount} פריטים עם חוסר` : 'לא נמצאו חוסרים בפריטים שנבדקו!');
   }
   window.calculateShortages = calculateShortages;
 
   function resetCurrentInventory() {
-    if (currentUser && currentUser.role !== 'owner') {
-      showNotification('רק בעלים יכולים לאפס נתונים', 'error');
-      return;
-    }
-    
-    if (confirm('האם אתה בטוח שברצונך לאפס את הספירה הנוכחית?')) {
-      initializeInventoryTable(); // Rebuilds the table and clears inputs
-      document.getElementById('shortageItems').textContent = '-';
-      document.getElementById('saveBtn').disabled = true;
-      showNotification('הספירה הנוכחית אופסה בהצלחה');
-    }
+	if (confirm('האם אתה בטוח שברצונך לאפס את הספירה הנוכחית?')) {
+	  initializeInventoryTable();
+	  document.getElementById('shortageItems').textContent = '-';
+	  document.getElementById('saveBtn').disabled = true;
+	  showNotification('הספירה הנוכחית אופסה');
+	}
   }
   window.resetCurrentInventory = resetCurrentInventory;
 
-  // Save inventory list to Firestore (realtime)
   async function saveInventoryList() {
-    if (!currentUser) {
-      showNotification('אנא התחבר', 'error');
-      return;
-    }
-    const listName = document.getElementById('listName').value.trim();
-    if (!listName) {
-      showNotification('יש להזין שם לרשימה', 'error');
-      return;
-    }
-    
-    const rows = document.querySelectorAll("#inventoryTable tbody tr");
-    const inventoryData = [];
-    const shortages = [];
-    let totalShortages = 0, totalCounted = 0;
-    
-    rows.forEach((row, i) => {
-      const current = row.cells[3].querySelector("input").valueAsNumber || 0;
-      const shortage = Math.max(0, items[i].target - current);
-      
-      if (row.cells[3].querySelector("input").value !== '') totalCounted++;
-      if (shortage > 0) {
-        totalShortages++;
-        shortages.push({ name: items[i].name, unit: items[i].unit, qty: shortage });
-      }
-      
-      inventoryData.push({
-        name: items[i].name, unit: items[i].unit, target: items[i].target,
-        current: current, shortage: shortage
-      });
-    });
-    
-    const newList = {
-      name: listName,
-      createdBy: currentUser.name,
-      createdAt: new Date().toISOString(),
-      data: inventoryData,
-      shortages,
-      stats: { totalItems: items.length, totalCounted, totalShortages },
-      status: totalShortages > 0 ? 'pending' : 'completed'
-    };
-    
-    await addDoc(listsRef, newList);
-    // UI feedback
-    updateTabBadges();
-    showNotification('הרשימה נשמרה בהצלחה!');
-    
-    const now = new Date();
-    const defaultName = `ספירה ${now.toLocaleDateString('he-IL')} ${now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'})}`;
-    document.getElementById('listName').value = defaultName;
-    resetCurrentInventory();
-    switchTab('lists');
+	// ... (rest of the saveInventoryList function is mostly the same, but adapted for checkboxes)
+	if (!currentUser) return;
+	const listName = document.getElementById('listName').value.trim();
+	if (!listName) {
+	  showNotification('יש להזין שם לרשימה', 'error');
+	  return;
+	}
+	const rows = document.querySelectorAll("#inventoryTable tbody tr");
+	const inventoryData = [];
+	const shortages = [];
+	let totalShortages = 0, totalCounted = 0;
+
+	rows.forEach(row => {
+		const checkbox = row.querySelector('input[type="checkbox"]');
+		if (!checkbox.checked) return; // Only save checked items
+
+		const item = items.find(i => i.id === row.dataset.itemId);
+		if (!item) return;
+
+		const current = row.querySelector(".current-qty-input").valueAsNumber || 0;
+		const shortage = Math.max(0, item.target - current);
+
+		totalCounted++;
+		if (shortage > 0) {
+			totalShortages++;
+			shortages.push({ id: item.id, name: item.name, unit: item.unit, qty: shortage });
+		}
+		inventoryData.push({
+			id: item.id, name: item.name, unit: item.unit, target: item.target,
+			current: current, shortage: shortage
+		});
+	});
+
+	const newList = {
+	  name: listName,
+	  createdBy: currentUser.name,
+	  createdAt: new Date().toISOString(),
+	  data: inventoryData,
+	  shortages,
+	  stats: { totalItems: items.length, totalCounted, totalShortages },
+	  status: totalShortages > 0 ? 'pending' : 'completed'
+	};
+	await addDoc(listsRef, newList);
+	showNotification('הרשימה נשמרה בהצלחה!');
+	resetCurrentInventory();
+	switchTab('lists');
   }
   window.saveInventoryList = saveInventoryList;
 
-  // ---------- VIEW & DELETE LISTS ----------
+
+  // ---------- MORNING COUNT & LIVE USAGE ----------
+  function getTodayDateKey() {
+	  const today = new Date();
+	  const year = today.getFullYear();
+	  const month = String(today.getMonth() + 1).padStart(2, '0');
+	  const day = String(today.getDate()).padStart(2, '0');
+	  return `${year}-${month}-${day}`;
+  }
+
+  function initializeMorningCountTable() {
+	const tbody = document.querySelector("#morningCountTable tbody");
+	tbody.innerHTML = (items || []).map(item => `
+	  <tr data-item-id="${item.id}">
+		<td>${item.name}</td>
+		<td>${item.unit}</td>
+		<td><input type="number" min="0" placeholder="0"></td>
+	  </tr>
+	`).join('');
+  }
+
+  function updateMorningCountUI() {
+	const statusEl = document.getElementById('morningCountStatus');
+	const saveBtn = document.getElementById('saveMorningCountBtn');
+
+	if (todaysCountData) {
+	  statusEl.textContent = 'בוצעה וניתן לערוך אותה';
+	  statusEl.style.color = 'green';
+	  saveBtn.textContent = 'עדכן ספירת בוקר';
+	  // Populate inputs with existing data
+	  const rows = document.querySelectorAll('#morningCountTable tbody tr');
+	  rows.forEach(row => {
+		const itemData = todaysCountData.items.find(i => i.id === row.dataset.itemId);
+		if (itemData) {
+		  row.querySelector('input').value = itemData.startQty;
+		}
+	  });
+	} else {
+	  statusEl.textContent = 'לא בוצעה';
+	  statusEl.style.color = 'red';
+	  saveBtn.textContent = 'שמור ספירת בוקר';
+	}
+  }
+
+  async function saveMorningCount() {
+	const dateKey = getTodayDateKey();
+	const docRef = doc(db, 'dailyCounts', dateKey);
+	const itemsData = [];
+	const rows = document.querySelectorAll("#morningCountTable tbody tr");
+
+	rows.forEach(row => {
+	  const itemId = row.dataset.itemId;
+	  const itemMaster = items.find(i => i.id === itemId);
+	  if (!itemMaster) return;
+
+	  const startQty = row.querySelector("input").valueAsNumber || 0;
+	  itemsData.push({
+		id: itemId,
+		name: itemMaster.name,
+		unit: itemMaster.unit,
+		target: itemMaster.target,
+		startQty: startQty,
+		usedQty: (todaysCountData?.items.find(i => i.id === itemId)?.usedQty) || 0 // Preserve existing usage
+	  });
+	});
+
+	await setDoc(docRef, { items: itemsData, lastUpdated: new Date().toISOString() });
+	showNotification('ספירת הבוקר נשמרה/עודכנה בהצלחה!');
+  }
+  window.saveMorningCount = saveMorningCount;
+
+
+  function initializeLiveUsageTable() {
+	const tbody = document.querySelector("#liveUsageTable tbody");
+	tbody.innerHTML = (items || []).map(item => `
+	  <tr data-item-id="${item.id}">
+		<td>${item.name}</td>
+		<td class="start-qty">-</td>
+		<td class="used-qty">-</td>
+		<td class="current-qty">-</td>
+		<td>
+		  <input type="number" min="1" value="1" style="width: 60px;">
+		  <button class="btn-secondary" style="min-width:auto; padding: 8px 12px; font-size: 14px;" onclick="logUsage('${item.id}', this)">הורד</button>
+		</td>
+	  </tr>
+	`).join('');
+  }
+
+  function updateLiveUsageUI() {
+	const prerequisite = document.getElementById('liveUsagePrerequisite');
+	const content = document.getElementById('liveUsageContent');
+
+	if (!todaysCountData) {
+	  prerequisite.innerHTML = `<div class="empty-state"><h3>יש לבצע "ספירת בוקר" תחילה.</h3></div>`;
+	  prerequisite.classList.remove('hidden');
+	  content.classList.add('hidden');
+	  return;
+	}
+
+	prerequisite.classList.add('hidden');
+	content.classList.remove('hidden');
+
+	const rows = document.querySelectorAll('#liveUsageTable tbody tr');
+	rows.forEach(row => {
+	  const itemData = todaysCountData.items.find(i => i.id === row.dataset.itemId);
+	  if (itemData) {
+		const currentQty = itemData.startQty - itemData.usedQty;
+		row.querySelector('.start-qty').textContent = itemData.startQty;
+		row.querySelector('.used-qty').textContent = itemData.usedQty;
+		row.querySelector('.current-qty').textContent = currentQty;
+		row.style.background = currentQty < itemData.target ? '#fff0f0' : 'transparent';
+	  }
+	});
+  }
+
+  async function logUsage(itemId, buttonElement) {
+	if (!todaysCountData) {
+	  showNotification('יש לבצע ספירת בוקר לפני רישום שימוש', 'error');
+	  return;
+	}
+	const input = buttonElement.previousElementSibling;
+	const qtyToUse = input.valueAsNumber;
+
+	if (!qtyToUse || qtyToUse <= 0) {
+	  showNotification('יש להזין כמות חיובית', 'error');
+	  return;
+	}
+
+	const dateKey = getTodayDateKey();
+	const docRef = doc(db, 'dailyCounts', dateKey);
+
+	const newItemsArray = todaysCountData.items.map(item => {
+	  if (item.id === itemId) {
+		return { ...item, usedQty: item.usedQty + qtyToUse };
+	  }
+	  return item;
+	});
+
+	await updateDoc(docRef, { items: newItemsArray, lastUpdated: new Date().toISOString() });
+	showNotification(`- ${qtyToUse} ${items.find(i=>i.id===itemId)?.name}`);
+	input.value = "1"; // Reset input
+  }
+  window.logUsage = logUsage;
+
+  async function generateEndOfDayList() {
+	  if (!todaysCountData) {
+		  showNotification('לא ניתן ליצור רשימה ללא נתוני ספירת בוקר', 'error');
+		  return;
+	  }
+	  if (!confirm('האם אתה בטוח שברצונך ליצור את רשימת סוף היום? פעולה זו תיצור רשימה חדשה.')) {
+		  return;
+	  }
+
+	  const inventoryData = [];
+	  const shortages = [];
+	  let totalShortages = 0, totalCounted = 0;
+
+	  todaysCountData.items.forEach(item => {
+		  const current = item.startQty - item.usedQty;
+		  const shortage = Math.max(0, item.target - current);
+		  totalCounted++; // All items are counted in this process
+
+		  if (shortage > 0) {
+			  totalShortages++;
+			  shortages.push({ id: item.id, name: item.name, unit: item.unit, qty: shortage });
+		  }
+		  inventoryData.push({
+			  id: item.id, name: item.name, unit: item.unit, target: item.target,
+			  current: current, shortage: shortage
+		  });
+	  });
+
+	  const listName = `רשימת סוף יום - ${new Date().toLocaleDateString('he-IL')}`;
+	  const newList = {
+		name: listName,
+		createdBy: `מערכת (אוטומטי)`,
+		createdAt: new Date().toISOString(),
+		data: inventoryData,
+		shortages,
+		stats: { totalItems: items.length, totalCounted, totalShortages },
+		status: totalShortages > 0 ? 'pending' : 'completed'
+	  };
+
+	  await addDoc(listsRef, newList);
+	  showNotification('רשימת סוף היום נוצרה בהצלחה!');
+	  switchTab('lists');
+  }
+  window.generateEndOfDayList = generateEndOfDayList;
+
+
+  // ---------- ALL OTHER FUNCTIONS (UNCHANGED OR MINOR CHANGES) ----------
+  // (User management, Item management, List viewing, etc.)
+
+  function showLoginError(message) {
+	const errorDiv = document.getElementById('loginError');
+	errorDiv.textContent = message;
+	errorDiv.classList.remove('hidden');
+	setTimeout(() => { errorDiv.classList.add('hidden'); }, 3000);
+  }
+
+  async function addUser() {
+	if (!currentUser || currentUser.role !== 'owner') return;
+	const username = document.getElementById('newUsername').value.trim();
+	const password = document.getElementById('newPassword').value;
+	const role = document.getElementById('newRole').value;
+	if (!username || !password) {
+	  showNotification('יש למלא שם משתמש וסיסמה', 'error');
+	  return;
+	}
+	if (users[username]) {
+	  showNotification('שם המשתמש כבר קיים', 'error');
+	  return;
+	}
+	await setDoc(doc(db, 'users', username), { password, role, name: username });
+	document.getElementById('newUsername').value = '';
+	document.getElementById('newPassword').value = '';
+	showNotification('המשתמש נוסף בהצלחה');
+  }
+  window.addUser = addUser;
+
+  async function deleteUser(username) {
+	if (!currentUser || currentUser.role !== 'owner' || username === currentUser.username) return;
+	if (confirm(`האם אתה בטוח שברצונך למחוק את המשתמש "${username}"?`)) {
+	  await deleteDoc(doc(db, 'users', username));
+	  showNotification('המשתמש נמחק בהצלחה');
+	}
+  }
+  window.deleteUser = deleteUser;
+
+  async function toggleUserRole(username) {
+	if (!currentUser || currentUser.role !== 'owner' || username === currentUser.username) return;
+	const newRole = users[username].role === 'owner' ? 'worker' : 'owner';
+	await updateDoc(doc(db, 'users', username), { role: newRole });
+	showNotification('תפקיד המשתמש שונה בהצלחה');
+  }
+  window.toggleUserRole = toggleUserRole;
+
+  function loadUsersGrid() {
+	const grid = document.getElementById('usersGrid');
+	const entries = Object.entries(users);
+	if (entries.length === 0) {
+	  grid.innerHTML = `<div class="empty-state"><h3>אין משתמשים</h3></div>`;
+	  return;
+	}
+	grid.innerHTML = entries.map(([username, user]) => `
+	  <div class="user-card">
+		<div class="user-details">
+		  <h4>${user.name}</h4>
+		  <span class="role-badge ${user.role}">${user.role === 'owner' ? 'בעלים' : 'עובד'}</span>
+		</div>
+		<div class="user-actions">
+		  ${username !== (currentUser && currentUser.username) ? `
+			<button class="btn-warning" onclick="toggleUserRole('${username}')">
+			  ${user.role === 'owner' ? 'הפוך לעובד' : 'הפוך לבעלים'}
+			</button>
+			<button class="btn-danger" onclick="deleteUser('${username}')">מחק</button>` :
+			'<span style="font-size: 12px; color: #7f8c8d;">(אתה)</span>'
+		  }
+		</div>
+	  </div>
+	`).join('');
+  }
+
+  function loadMasterItemsList() {
+	  const container = document.getElementById('masterItemsList');
+	  if (!items || items.length === 0) {
+		container.innerHTML = `<div class="empty-state"><h3>אין פריטים ברשימה הראשית</h3></div>`;
+		return;
+	  }
+	  container.innerHTML = `
+		  <table>
+			  <thead>
+				  <tr>
+					  <th>שם פריט</th>
+					  <th>יחידה</th>
+					  <th>כמות יעד</th>
+					  <th>פעולות</th>
+				  </tr>
+			  </thead>
+			  <tbody>
+				  ${items.map((item) => `
+					  <tr>
+						  <td>${item.name}</td>
+						  <td>${item.unit}</td>
+						  <td>${item.target}</td>
+						  <td>
+							  <button class="btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deleteItem('${item.id}')">מחק</button>
+						  </td>
+					  </tr>
+				  `).join('')}
+			  </tbody>
+		  </table>
+	  `;
+  }
+
+  async function addItem() {
+	  if (!currentUser || currentUser.role !== 'owner') return;
+	  const name = document.getElementById('newItemName').value.trim();
+	  const unit = document.getElementById('newItemUnit').value.trim();
+	  const target = parseInt(document.getElementById('newItemTarget').value, 10);
+
+	  if (!name || !unit || isNaN(target) || target < 0) {
+		  showNotification('יש למלא את כל השדות כראוי', 'error');
+		  return;
+	  }
+	  await addDoc(itemsRef, { name, unit, target });
+	  document.getElementById('newItemName').value = '';
+	  document.getElementById('newItemUnit').value = '';
+	  document.getElementById('newItemTarget').value = '';
+	  showNotification('הפריט נוסף בהצלחה');
+  }
+  window.addItem = addItem;
+
+  async function deleteItem(itemId) {
+	  if (!currentUser || currentUser.role !== 'owner') return;
+	  const item = items.find(i => i.id === itemId);
+	  if (!item) return;
+	  if (confirm(`האם אתה בטוח שברצונך למחוק את הפריט "${item.name}"?`)) {
+		  await deleteDoc(doc(db, 'items', itemId));
+		  showNotification('הפריט נמחק');
+	  }
+  }
+  window.deleteItem = deleteItem;
+
   function loadInventoryLists() {
-    const container = document.getElementById('inventoryLists');
-    if (!inventoryLists || inventoryLists.length === 0) {
-      container.innerHTML = `<div class="empty-state"><h3>🗂️ אין רשימות קיימות</h3></div>`;
-      return;
-    }
-    
-    const sortedLists = [...inventoryLists].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    
-    container.innerHTML = sortedLists.map(list => `
-      <div class="inventory-card">
-        <div class="inventory-card-header">
-          <div class="status-badge ${list.status}">${getStatusText(list.status)}</div>
-          <h3>${list.name}</h3>
-          <div class="inventory-meta">
-            <span>👤 ${list.createdBy}</span>
-            <span>🕒 ${getTimeAgo(new Date(list.createdAt))}</span>
-          </div>
-        </div>
-        <div class="inventory-card-body">
-          <div class="inventory-stats">
-            <div class="mini-stat"><div class="mini-stat-number">${list.stats.totalItems}</div><div class="mini-stat-label">פריטים</div></div>
-            <div class="mini-stat"><div class="mini-stat-number">${list.stats.totalCounted}</div><div class="mini-stat-label">נספרו</div></div>
-            <div class="mini-stat"><div class="mini-stat-number">${list.stats.totalShortages}</div><div class="mini-stat-label">חוסרים</div></div>
-          </div>
-          <div class="inventory-actions">
-            <button class="btn-primary" onclick="viewInventoryDetails('${list.id}')">צפה בפרטים</button>
-            ${currentUser && currentUser.role === 'owner' ? `<button class="btn-danger" onclick="deleteInventoryList('${list.id}')">מחק</button>` : ''}
-          </div>
-        </div>
-      </div>
-    `).join('');
+	const container = document.getElementById('inventoryLists');
+	if (!inventoryLists || inventoryLists.length === 0) {
+	  container.innerHTML = `<div class="empty-state"><h3>🗂️ אין רשימות קיימות</h3></div>`;
+	  return;
+	}
+	container.innerHTML = inventoryLists.map(list => `
+	  <div class="inventory-card">
+		<div class="inventory-card-header">
+		  <div class="status-badge ${list.status}">${getStatusText(list.status)}</div>
+		  <h3>${list.name}</h3>
+		  <div class="inventory-meta">
+			<span>👤 ${list.createdBy}</span>
+			<span>🕒 ${getTimeAgo(new Date(list.createdAt))}</span>
+		  </div>
+		</div>
+		<div class="inventory-card-body">
+		  <div class="inventory-stats">
+			<div class="mini-stat"><div class="mini-stat-number">${list.stats.totalItems}</div><div class="mini-stat-label">פריטים</div></div>
+			<div class="mini-stat"><div class="mini-stat-number">${list.stats.totalCounted}</div><div class="mini-stat-label">נספרו</div></div>
+			<div class="mini-stat"><div class="mini-stat-number">${list.stats.totalShortages}</div><div class="mini-stat-label">חוסרים</div></div>
+		  </div>
+		  <div class="inventory-actions">
+			<button class="btn-primary" onclick="viewInventoryDetails('${list.id}')">צפה בפרטים</button>
+			${currentUser && currentUser.role === 'owner' ? `<button class="btn-danger" onclick="deleteInventoryList('${list.id}')">מחק</button>` : ''}
+		  </div>
+		</div>
+	  </div>
+	`).join('');
   }
   window.loadInventoryLists = loadInventoryLists;
 
   async function deleteInventoryList(listId) {
-    if (!currentUser || currentUser.role !== 'owner') return;
-    const list = inventoryLists.find(l => l.id === listId);
-    if (!list) return;
-    if (confirm(`האם אתה בטוח שברצונך למחוק את הרשימה "${list.name}"?`)) {
-      await deleteDoc(doc(db, 'inventoryLists', listId));
-      showNotification('הרשימה נמחקה בהצלחה');
-    }
+	if (!currentUser || currentUser.role !== 'owner') return;
+	const list = inventoryLists.find(l => l.id === listId);
+	if (!list) return;
+	if (confirm(`האם אתה בטוח שברצונך למחוק את הרשימה "${list.name}"?`)) {
+	  await deleteDoc(doc(db, 'inventoryLists', listId));
+	  showNotification('הרשימה נמחקה בהצלחה');
+	}
   }
   window.deleteInventoryList = deleteInventoryList;
 
-  // ---------- STORAGE VIEW ----------
   function loadStorageView() {
-    const container = document.getElementById('storageContent');
-    const allShortages = (inventoryLists || []).flatMap(list => list.shortages || []);
-  
-    if (allShortages.length === 0) {
-      container.innerHTML = `<div class="empty-state"><h3>🏪 אין פריטים לאיסוף מהמחסן</h3></div>`;
-      return;
-    }
-  
-    // Aggregate shortages by item name
-    const aggregatedShortages = allShortages.reduce((acc, shortage) => {
-        if (!acc[shortage.name]) {
-            acc[shortage.name] = { ...shortage, qty: 0 };
-        }
-        acc[shortage.name].qty += shortage.qty;
-        return acc;
-    }, {});
-    
-    const storageItems = Object.values(aggregatedShortages);
-  
-    container.innerHTML = `
-      <div class="stats">
-        <div class="stat-card">
-          <div class="stat-number">${storageItems.length}</div>
-          <div class="stat-label">סה"כ פריטים בחוסר</div>
-        </div>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>פריט</th>
-            <th>יחידה</th>
-            <th>סה"כ כמות להביא</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${storageItems.map(item => `
-            <tr>
-              <td>${item.name}</td>
-              <td>${item.unit}</td>
-              <td style="font-weight: bold;">${item.qty}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    `;
+	const container = document.getElementById('storageContent');
+	// Aggregate shortages from all lists
+	const aggregatedShortages = (inventoryLists || [])
+	  .flatMap(list => list.shortages || [])
+	  .reduce((acc, shortage) => {
+		const key = shortage.name; // Use name as key
+		if (!acc[key]) {
+		  acc[key] = { ...shortage, qty: 0 };
+		}
+		acc[key].qty += shortage.qty;
+		return acc;
+	  }, {});
+
+	const storageItems = Object.values(aggregatedShortages).filter(item => item.qty > 0);
+
+	if (storageItems.length === 0) {
+	  container.innerHTML = `<div class="empty-state"><h3>🏪 אין פריטים לאיסוף מהמחסן</h3></div>`;
+	  return;
+	}
+
+	container.innerHTML = `
+	  <div class="stats">
+		<div class="stat-card">
+		  <div class="stat-number">${storageItems.length}</div>
+		  <div class="stat-label">סה"כ פריטים בחוסר</div>
+		</div>
+	  </div>
+	  <table>
+		<thead><tr><th>פריט</th><th>יחידה</th><th>סה"כ כמות להביא</th></tr></thead>
+		<tbody>
+		  ${storageItems.map(item => `
+			<tr><td>${item.name}</td><td>${item.unit}</td><td style="font-weight: bold; font-size: 1.2em;">${item.qty}</td></tr>
+		  `).join('')}
+		</tbody>
+	  </table>
+	`;
   }
   window.loadStorageView = loadStorageView;
 
-  // ---------- UTILITIES ----------
   function updateTabBadges() {
-    const listsCount = inventoryLists.length || 0;
-    const storageCount = inventoryLists.reduce((total, list) => total + (list.shortages ? list.shortages.length : 0), 0);
-    
-    document.getElementById('listsBadge').textContent = listsCount;
-    document.getElementById('storageBadge').textContent = storageCount;
-    
-    document.getElementById('listsBadge').style.display = listsCount > 0 ? 'inline-block' : 'none';
-    document.getElementById('storageBadge').style.display = storageCount > 0 ? 'inline-block' : 'none';
+	const listsCount = inventoryLists.length || 0;
+	const storageCount = Object.values((inventoryLists || [])
+	  .flatMap(list => list.shortages || [])
+	  .reduce((acc, s) => { acc[s.name] = true; return acc; }, {})).length;
+
+	document.getElementById('listsBadge').textContent = listsCount;
+	document.getElementById('storageBadge').textContent = storageCount;
+	document.getElementById('listsBadge').style.display = listsCount > 0 ? '' : 'none';
+	document.getElementById('storageBadge').style.display = storageCount > 0 ? '' : 'none';
   }
-  window.updateTabBadges = updateTabBadges;
 
   function showNotification(message, type = 'success') {
-    const notification = document.getElementById('notification');
-    notification.textContent = message;
-    notification.className = `notification ${type} show`;
-    setTimeout(() => { notification.classList.remove('show'); }, 3000);
+	const notification = document.getElementById('notification');
+	notification.textContent = message;
+	notification.className = `notification ${type} show`;
+	setTimeout(() => { notification.classList.remove('show'); }, 3000);
   }
-  window.showNotification = showNotification;
 
   function getStatusText(status) {
-    return { 'completed': 'הושלם', 'pending': 'ממתין', 'in-progress': 'בתהליך' }[status] || 'לא ידוע';
+	return { 'completed': 'הושלם', 'pending': 'ממתין', 'in-progress': 'בתהליך' }[status] || 'לא ידוע';
   }
 
   function getTimeAgo(date) {
-    const diffMs = new Date() - date;
-    const diffMins = Math.round(diffMs / 60000);
-    if (diffMins < 60) return `לפני ${diffMins} דקות`;
-    const diffHours = Math.round(diffMs / 3600000);
-    if (diffHours < 24) return `לפני ${diffHours} שעות`;
-    const diffDays = Math.round(diffMs / 86400000);
-    return `לפני ${diffDays} ימים`;
+	const diffMs = new Date() - date;
+	const diffMins = Math.round(diffMs / 60000);
+	if (diffMins < 1) return 'הרגע';
+	if (diffMins < 60) return `לפני ${diffMins} דקות`;
+	const diffHours = Math.round(diffMins / 60);
+	if (diffHours < 24) return `לפני ${diffHours} שעות`;
+	const diffDays = Math.round(diffHours / 24);
+	return `לפני ${diffDays} ימים`;
   }
 
-  // Simplified modal view
   function viewInventoryDetails(listId) {
-      const list = inventoryLists.find(l => l.id === listId);
-      if (!list) return;
+	  const list = inventoryLists.find(l => l.id === listId);
+	  if (!list) return;
 
-      let detailsHtml = `
-          <h2>${list.name}</h2>
-          <p>נוצר על ידי: ${list.createdBy} ב-${new Date(list.createdAt).toLocaleString('he-IL')}</p>
-          <table style="width:100%;">
-              <thead><tr><th>פריט</th><th>יעד</th><th>נמצא</th><th>חוסר</th></tr></thead>
-              <tbody>
-                  ${list.data.map(item => `
-                      <tr style="${item.shortage > 0 ? 'background:#ffe0e0' : ''}">
-                          <td>${item.name}</td>
-                          <td>${item.target}</td>
-                          <td>${item.current}</td>
-                          <td style="font-weight:bold; color:${item.shortage > 0 ? '#e74c3c' : 'green'};">${item.shortage}</td>
-                      </tr>
-                  `).join('')}
-              </tbody>
-          </table>
-      `;
-      const newWindow = window.open("", "Details", "width=900,height=700");
-      newWindow.document.write(`<html lang="he" dir="rtl"><head><title>פרטי רשימה</title><style>${document.querySelector('style').innerHTML}</style></head><body><div class="container" style="margin-top:20px;"><div class="section">${detailsHtml}</div></div></body></html>`);
-      newWindow.document.close();
+	  let detailsHtml = `
+		  <h2>${list.name}</h2>
+		  <p>נוצר על ידי: ${list.createdBy} ב-${new Date(list.createdAt).toLocaleString('he-IL')}</p>
+		  <table style="width:100%;">
+			  <thead><tr><th>פריט</th><th>יעד</th><th>נמצא</th><th>חוסר</th></tr></thead>
+			  <tbody>
+				  ${list.data.map(item => `
+					  <tr style="${item.shortage > 0 ? 'background:#ffe0e0' : ''}">
+						  <td>${item.name}</td>
+						  <td>${item.target}</td>
+						  <td>${item.current}</td>
+						  <td style="font-weight:bold; color:${item.shortage > 0 ? '#e74c3c' : 'green'};">${item.shortage}</td>
+					  </tr>
+				  `).join('')}
+			  </tbody>
+		  </table>
+	  `;
+	  const newWindow = window.open("", "Details", "width=900,height=700");
+	  newWindow.document.write(`<html lang="he" dir="rtl"><head><title>פרטי רשימה</title><style>${document.querySelector('style').innerHTML}</style></head><body><div class="container" style="margin-top:20px;"><div class="section">${detailsHtml}</div></div></body></html>`);
+	  newWindow.document.close();
   }
   window.viewInventoryDetails = viewInventoryDetails;
 
-  // Expose a few more functions used in HTML
   window.loadMasterItemsList = loadMasterItemsList;
   window.loadUsersGrid = loadUsersGrid;
-  window.loadInventoryLists = loadInventoryLists;
-
 </script>
 </body>
 </html>
