@@ -391,10 +391,7 @@
 
   /* == CORRECTED CSS RULE == */
   /* This rule now ONLY applies to inputs inside the inventory table */
-  #inventoryTable input[type=number],
-  #morningCountTable input[type=number],
-  #liveUsageTable input[type=number],
-  #inventoryTable input[type=text] {
+  table input[type=number] {
 	width: 80px;
 	text-align: center;
 	padding: 8px;
@@ -661,8 +658,11 @@
 	  <span class="badge" id="listsBadge">0</span>
 	</button>
 	<button class="tab-button" onclick="switchTab('storage')" id="storageTab">
-	  🏪 מחסן
+	  🏪 חוסרים למחסן
 	  <span class="badge" id="storageBadge">0</span>
+	</button>
+	<button class="tab-button" onclick="switchTab('storageInventory')" id="storageInventoryTab">
+	  🗄️ מלאי מחסן
 	</button>
 	<button class="tab-button hidden" onclick="switchTab('admin')" id="adminTab">
 	  👥 ניהול משתמשים
@@ -692,6 +692,7 @@
 		<tr>
 		  <th>בדיקה</th>
 		  <th>פריט</th>
+		  <th>כמות במחסן</th>
 		  <th>יחידה</th>
 		  <th>כמות יעד</th>
 		  <th>כמות נוכחית</th>
@@ -729,7 +730,7 @@
 
   <div id="liveUsageSection" class="section hidden">
 	<h2>רישום שימוש שוטף</h2>
-	<div class="info-box">בכל פעם שאתם משתמשים בפריט מהמלאי, רשמו כאן כמה יחידות נלקחו. בסוף היום, המערכת תיצור רשימת חוסרים באופן אוטומטי.</div>
+	<div class="info-box">בכל פעם שאתם משתמשים בפריט מהמלאי (או מוסיפים), רשמו כאן כמה יחידות נלקחו/הוספו. בסוף היום, המערכת תיצור רשימת חוסרים באופן אוטומטי.</div>
 	<div id="liveUsagePrerequisite"></div>
 	<div id="liveUsageContent" class="hidden">
 	  <table id="liveUsageTable">
@@ -738,6 +739,7 @@
 			<th>פריט</th>
 			<th>כמות התחלתית</th>
 			<th>שימוש היום</th>
+			<th>הוסף היום</th>
 			<th>כמות נוכחית</th>
 			<th>פעולת שימוש</th>
 		  </tr>
@@ -757,10 +759,30 @@
   </div>
 
   <div id="storageSection" class="section hidden">
-	<h2>צפייה במחסן - פריטים לאיסוף</h2>
+	<h2>צפייה בחוסרים - פריטים לאיסוף</h2>
 	<div id="storageContent">
 	  </div>
   </div>
+
+  <div id="storageInventorySection" class="section hidden">
+	<h2>ניהול מלאי מחסן</h2>
+	<div class="info-box">כאן ניתן לעדכן את רשימת המלאי המלאה של כל מה שקיים במחסן הראשי.</div>
+	<p>עודכן לאחרונה: <b id="storageLastUpdated">מעולם לא</b></p>
+	<table id="storageInventoryTable">
+		<thead>
+			<tr>
+				<th>פריט</th>
+				<th>יחידה</th>
+				<th>כמות במחסן</th>
+			</tr>
+		</thead>
+		<tbody></tbody>
+	</table>
+	<div class="buttons">
+		<button class="btn-success" onclick="saveStorageInventory()">שמור מלאי מחסן</button>
+	</div>
+  </div>
+
 
   <div id="adminSection" class="section hidden">
 	<h2>ניהול משתמשים</h2>
@@ -828,7 +850,8 @@
   const usersRef = collection(db, 'users');
   const itemsRef = collection(db, 'items');
   const listsRef = collection(db, 'inventoryLists');
-  const dailyCountsRef = collection(db, 'dailyCounts'); // NEW: For morning/live counts
+  const dailyCountsRef = collection(db, 'dailyCounts');
+  const storageInventoryRef = doc(db, 'storageInventory', 'mainStorage');
 
   // Local state
   let users = {};
@@ -836,7 +859,8 @@
   let inventoryLists = [];
   let currentUser = null;
   let currentTab = 'counting';
-  let todaysCountData = null; // NEW: To hold today's live data
+  let todaysCountData = null;
+  let storageInventoryData = null;
 
   // DOM ready
   document.addEventListener('DOMContentLoaded', () => {
@@ -850,51 +874,26 @@
   function subscribeToUsers() {
 	onSnapshot(usersRef, async snapshot => {
 	  if (snapshot.empty) {
-		const defaultUsers = {
-		  'admin': { password: 'admin123', role: 'owner', name: 'מנהל ראשי' },
-		  'owner1': { password: 'owner123', role: 'owner', name: 'בעלים 1' },
-		  'worker1': { password: 'worker123', role: 'worker', name: 'עובד 1' }
-		};
-		for (const [username, data] of Object.entries(defaultUsers)) {
-		  await setDoc(doc(db, 'users', username), data);
-		}
+		const defaultUsers = { 'admin': { password: 'admin123', role: 'owner', name: 'מנהל ראשי' }, 'owner1': { password: 'owner123', role: 'owner', name: 'בעלים 1' }, 'worker1': { password: 'worker123', role: 'worker', name: 'עובד 1' } };
+		for (const [username, data] of Object.entries(defaultUsers)) { await setDoc(doc(db, 'users', username), data); }
 		return;
 	  }
 	  users = {};
-	  snapshot.docs.forEach(d => {
-		users[d.id] = d.data();
-	  });
-	  console.log('Demo Credentials:');
-	  console.log('Owner: admin / admin123');
-	  console.log('Worker: worker1 / worker123');
+	  snapshot.docs.forEach(d => { users[d.id] = d.data(); });
+	  console.log('Demo Credentials:\nOwner: admin / admin123\nWorker: worker1 / worker123');
 	  if (currentTab === 'admin') loadUsersGrid();
 	}, err => console.error('Users snapshot error', err));
   }
 
   function subscribeToItems() {
-	onSnapshot(query(itemsRef, orderBy("name")), async snapshot => { // Order by name
+	onSnapshot(query(itemsRef, orderBy("name")), async snapshot => {
 	  if (snapshot.empty) {
-		const defaultItems = [
-		  ["חמגשית חומה", "שרבול", 1], ["פרגמנט פוטטוס", "חבילה", 1], ["פרגמנט מגשים", "חבילה", 1],
-		  ["קערה חומה", "שרבול", 1], ["מכסה תירס גדול", "שרבולים", 3], ["מכסה תירס בינוני", "שרבולים", 2],
-		  ["קוקוט רוטב 2 אוז", "שרבולים", 4], ["מכסה רוטב 2 אוז", "שרבולים", 4], ["מכסה קוקוט אלפרדו", "שרבולים", 4],
-		  ["מכסה לקערה חומה", "שרבול", 1], ["קוקוט 1 אוז", "שרבולים", 5], ["סחוג", "קופסא", 1],
-		  ["שום כתוש", "קופסא", 1], ["מפיות", "חבילה", 1], ["כוסות שתייה", "שרבולים", 2],
-		  ["כוס שתייה חמה", "שרבול", 1], ["קשיות", "חבילה", 1], ["שקיות לבנות", "חבילה", 1],
-		  ["שקיות זבל", "גליל", 1], ["שקיות גופה", "גליל", 1], ["שקיות TA", "חבילות", 4],
-		  ["מלח מנות", "חבילה", 1], ["פלפל מנות", "חבילה", 1], ["מזלגונים מעץ", "קרטון", 1],
-		  ["מזלגות רגיל", "קרטון", 1], ["כפיות", "קרטון", 1]
-		];
-		for (const it of defaultItems) {
-		  await addDoc(itemsRef, { name: it[0], unit: it[1], target: it[2] });
-		}
+		const defaultItems = [["חמגשית חומה", "שרבול", 1], ["פרגמנט פוטטוס", "חבילה", 1], ["פרגמנט מגשים", "חבילה", 1], ["קערה חומה", "שרבול", 1], ["מכסה תירס גדול", "שרבולים", 3], ["מכסה תירס בינוני", "שרבולים", 2], ["קוקוט רוטב 2 אוז", "שרבולים", 4], ["מכסה רוטב 2 אוז", "שרבולים", 4], ["מכסה קוקוט אלפרדו", "שרבולים", 4], ["מכסה לקערה חומה", "שרבול", 1], ["קוקוט 1 אוז", "שרבולים", 5], ["סחוג", "קופסא", 1], ["שום כתוש", "קופסא", 1], ["מפיות", "חבילה", 1], ["כוסות שתייה", "שרבולים", 2], ["כוס שתייה חמה", "שרבול", 1], ["קשיות", "חבילה", 1], ["שקיות לבנות", "חבילה", 1], ["שקיות זבל", "גליל", 1], ["שקיות גופה", "גליל", 1], ["שקיות TA", "חבילות", 4], ["מלח מנות", "חבילה", 1], ["פלפל מנות", "חבילה", 1], ["מזלגונים מעץ", "קרטון", 1], ["מזלגות רגיל", "קרטון", 1], ["כפיות", "קרטון", 1]];
+		for (const it of defaultItems) { await addDoc(itemsRef, { name: it[0], unit: it[1], target: it[2] }); }
 		return;
 	  }
 	  items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-	  // Refresh UI pieces that depend on items
-	  if (currentUser) {
-		  initializeAllTables();
-	  }
+	  if (currentUser) { initializeAllTables(); }
 	}, err => console.error('Items snapshot error', err));
   }
 
@@ -908,16 +907,10 @@
 	}, err => console.error('Lists snapshot error', err));
   }
 
-  // NEW: Subscribe to today's daily count document
   function subscribeToDailyCount(dateKey) {
 	  const docRef = doc(db, 'dailyCounts', dateKey);
 	  return onSnapshot(docRef, (docSnap) => {
-		  if (docSnap.exists()) {
-			  todaysCountData = docSnap.data();
-		  } else {
-			  todaysCountData = null;
-		  }
-		  // Update relevant UI if the tab is active
+		  todaysCountData = docSnap.exists() ? docSnap.data() : null;
 		  if (currentTab === 'morningCount') updateMorningCountUI();
 		  if (currentTab === 'liveUsage') updateLiveUsageUI();
 	  }, err => {
@@ -927,23 +920,35 @@
 		  updateLiveUsageUI();
 	  });
   }
+  let dailyCountUnsubscribe = null;
 
-  let dailyCountUnsubscribe = null; // To hold the listener unsub function
+  function subscribeToStorageInventory() {
+	return onSnapshot(storageInventoryRef, (docSnap) => {
+		storageInventoryData = docSnap.exists() ? docSnap.data() : null;
+		// Update relevant UIs that depend on this data
+		if (currentTab === 'storageInventory') updateStorageInventoryUI();
+		if (currentTab === 'counting') updateStorageInfoInCountingTable(); // MODIFIED
+	}, err => {
+		console.error("Error listening to storage inventory:", err);
+		storageInventoryData = null;
+		updateStorageInventoryUI();
+		updateStorageInfoInCountingTable();
+	});
+  }
+  let storageInventoryUnsubscribe = null;
 
 
   // ---------- TAB & UI MANAGEMENT ----------
   function switchTab(tabName) {
 	document.querySelectorAll('.section').forEach(sec => sec.classList.add('hidden'));
 	document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-
 	document.getElementById(tabName + 'Section').classList.remove('hidden');
 	document.getElementById(tabName + 'Tab').classList.add('active');
-
 	currentTab = tabName;
 
-	// Load content for specific tabs
 	if (tabName === 'lists') loadInventoryLists();
 	if (tabName === 'storage') loadStorageView();
+	if (tabName === 'storageInventory') updateStorageInventoryUI();
 	if (tabName === 'admin') loadUsersGrid();
 	if (tabName === 'items') loadMasterItemsList();
 	if (tabName === 'morningCount') updateMorningCountUI();
@@ -956,7 +961,6 @@
 	event.preventDefault();
 	const username = document.getElementById('username').value;
 	const password = document.getElementById('password').value;
-
 	if (users[username] && users[username].password === password) {
 	  currentUser = { username: username, ...users[username] };
 	  showMainApp();
@@ -970,7 +974,8 @@
   function logout() {
 	if (confirm('האם אתה בטוח שברצונך להתנתק?')) {
 	  currentUser = null;
-	  if (dailyCountUnsubscribe) dailyCountUnsubscribe(); // Stop listening
+	  if (dailyCountUnsubscribe) dailyCountUnsubscribe();
+	  if (storageInventoryUnsubscribe) storageInventoryUnsubscribe();
 	  document.getElementById('loginScreen').classList.remove('hidden');
 	  document.getElementById('mainApp').classList.add('hidden');
 	  document.getElementById('username').value = '';
@@ -991,8 +996,7 @@
 
 	const ownerElements = ['adminTab', 'itemsTab', 'resetBtn'];
 	ownerElements.forEach(id => {
-		const el = document.getElementById(id);
-		el.style.display = currentUser.role === 'owner' ? '' : 'none';
+		document.getElementById(id).style.display = currentUser.role === 'owner' ? '' : 'none';
 	});
 
 	const now = new Date();
@@ -1000,10 +1004,11 @@
 	document.getElementById('listName').value = defaultName;
 	document.getElementById('todayDate').textContent = now.toLocaleDateString('he-IL');
 
-	// Initialize all tables and start listening to today's data
 	initializeAllTables();
 	if (dailyCountUnsubscribe) dailyCountUnsubscribe();
+	if (storageInventoryUnsubscribe) storageInventoryUnsubscribe();
 	dailyCountUnsubscribe = subscribeToDailyCount(getTodayDateKey());
+	storageInventoryUnsubscribe = subscribeToStorageInventory();
 	updateTabBadges();
   }
 
@@ -1011,20 +1016,18 @@
 	initializeInventoryTable();
 	initializeMorningCountTable();
 	initializeLiveUsageTable();
+	initializeStorageInventoryTable();
 	loadMasterItemsList();
   }
 
-  // ---------- INVENTORY COUNTING (CHECKBOX METHOD) ----------
+  // ---------- INVENTORY COUNTING (WITH STORAGE INFO) ----------
   function initializeInventoryTable() {
 	const tbody = document.querySelector("#inventoryTable tbody");
 	tbody.innerHTML = (items || []).map(item => `
 	  <tr data-item-id="${item.id}">
-		<td>
-		  <div class="checkbox-container">
-			<input type="checkbox" onchange="toggleQuantityInput(this)">
-		  </div>
-		</td>
+		<td><div class="checkbox-container"><input type="checkbox" onchange="toggleQuantityInput(this)"></div></td>
 		<td>${item.name}</td>
+		<td class="storage-qty-cell">-</td>
 		<td>${item.unit}</td>
 		<td>${item.target}</td>
 		<td><input type="number" class="current-qty-input hidden" min="0" placeholder="0" oninput="updateStats()"></td>
@@ -1032,17 +1035,26 @@
 	  </tr>
 	`).join('');
 	updateStats();
+	updateStorageInfoInCountingTable(); // MODIFIED: Populate storage info on init
   }
   window.initializeInventoryTable = initializeInventoryTable;
+
+  // NEW FUNCTION: Updates storage quantities in the main counting table
+  function updateStorageInfoInCountingTable() {
+	const rows = document.querySelectorAll("#inventoryTable tbody tr");
+	rows.forEach(row => {
+		const itemId = row.dataset.itemId;
+		const cell = row.querySelector('.storage-qty-cell');
+		const storageItem = storageInventoryData?.items?.find(i => i.id === itemId);
+		const storageQty = storageItem ? storageItem.qty : 0;
+		cell.innerHTML = `<span style="font-weight: bold; color: ${storageQty > 0 ? '#27ae60' : '#7f8c8d'};">${storageQty}</span>`;
+	});
+  }
 
   function toggleQuantityInput(checkbox) {
 	const input = checkbox.closest('tr').querySelector('.current-qty-input');
 	input.classList.toggle('hidden', !checkbox.checked);
-	if (checkbox.checked) {
-	  input.focus();
-	} else {
-	  input.value = '';
-	}
+	if (checkbox.checked) { input.focus(); } else { input.value = ''; }
 	updateStats();
   }
   window.toggleQuantityInput = toggleQuantityInput;
@@ -1051,21 +1063,7 @@
 	const checkboxes = document.querySelectorAll('#inventoryTable tbody input[type="checkbox"]');
 	const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
 	const progress = items.length > 0 ? (checkedCount / items.length) * 100 : 0;
-
-	document.getElementById('statsContainer').innerHTML = `
-		<div class="stat-card">
-		  <div class="stat-number">${items.length}</div>
-		  <div class="stat-label">סה"כ פריטים</div>
-		</div>
-		<div class="stat-card">
-		  <div class="stat-number">${checkedCount}</div>
-		  <div class="stat-label">נבדקו</div>
-		</div>
-		<div class="stat-card">
-		  <div class="stat-number" id="shortageItems">-</div>
-		  <div class="stat-label">חוסרים</div>
-		</div>
-	`;
+	document.getElementById('statsContainer').innerHTML = `<div class="stat-card"><div class="stat-number">${items.length}</div><div class="stat-label">סה"כ פריטים</div></div><div class="stat-card"><div class="stat-number">${checkedCount}</div><div class="stat-label">נבדקו</div></div><div class="stat-card"><div class="stat-number" id="shortageItems">-</div><div class="stat-label">חוסרים</div></div>`;
 	document.getElementById('progressFill').style.width = progress + '%';
   }
   window.updateStats = updateStats;
@@ -1077,78 +1075,46 @@
 	  const checkbox = row.querySelector('input[type="checkbox"]');
 	  const item = items.find(i => i.id === row.dataset.itemId);
 	  if (!item) return;
-
 	  let shortage = 0;
 	  if (checkbox.checked) {
 		const current = row.querySelector(".current-qty-input").valueAsNumber || 0;
 		shortage = item.target - current;
 	  }
-
 	  const shortageCell = row.querySelector('.shortage-cell');
 	  shortageCell.textContent = shortage > 0 ? shortage : 0;
 	  row.className = shortage > 0 ? "shortage" : (checkbox.checked ? "ok" : "");
 	  if (shortage > 0) shortageCount++;
 	});
-
 	document.getElementById('shortageItems').textContent = shortageCount;
 	document.getElementById('saveBtn').disabled = false;
 	showNotification(shortageCount > 0 ? `נמצאו ${shortageCount} פריטים עם חוסר` : 'לא נמצאו חוסרים בפריטים שנבדקו!');
   }
   window.calculateShortages = calculateShortages;
 
-  function resetCurrentInventory() {
-	if (confirm('האם אתה בטוח שברצונך לאפס את הספירה הנוכחית?')) {
-	  initializeInventoryTable();
-	  document.getElementById('shortageItems').textContent = '-';
-	  document.getElementById('saveBtn').disabled = true;
-	  showNotification('הספירה הנוכחית אופסה');
-	}
-  }
+  function resetCurrentInventory() { if (confirm('האם אתה בטוח שברצונך לאפס את הספירה הנוכחית?')) { initializeInventoryTable(); document.getElementById('shortageItems').textContent = '-'; document.getElementById('saveBtn').disabled = true; showNotification('הספירה הנוכחית אופסה'); } }
   window.resetCurrentInventory = resetCurrentInventory;
 
   async function saveInventoryList() {
-	// ... (rest of the saveInventoryList function is mostly the same, but adapted for checkboxes)
 	if (!currentUser) return;
 	const listName = document.getElementById('listName').value.trim();
-	if (!listName) {
-	  showNotification('יש להזין שם לרשימה', 'error');
-	  return;
-	}
+	if (!listName) { showNotification('יש להזין שם לרשימה', 'error'); return; }
 	const rows = document.querySelectorAll("#inventoryTable tbody tr");
-	const inventoryData = [];
-	const shortages = [];
+	const inventoryData = []; const shortages = [];
 	let totalShortages = 0, totalCounted = 0;
-
 	rows.forEach(row => {
 		const checkbox = row.querySelector('input[type="checkbox"]');
-		if (!checkbox.checked) return; // Only save checked items
-
-		const item = items.find(i => i.id === row.dataset.itemId);
-		if (!item) return;
-
+		if (!checkbox.checked) return;
+		const item = items.find(i => i.id === row.dataset.itemId); if (!item) return;
 		const current = row.querySelector(".current-qty-input").valueAsNumber || 0;
 		const shortage = Math.max(0, item.target - current);
-
 		totalCounted++;
 		if (shortage > 0) {
 			totalShortages++;
 			shortages.push({ id: item.id, name: item.name, unit: item.unit, qty: shortage });
 		}
-		inventoryData.push({
-			id: item.id, name: item.name, unit: item.unit, target: item.target,
-			current: current, shortage: shortage
-		});
+		inventoryData.push({ id: item.id, name: item.name, unit: item.unit, target: item.target, current: current, shortage: shortage });
 	});
-
-	const newList = {
-	  name: listName,
-	  createdBy: currentUser.name,
-	  createdAt: new Date().toISOString(),
-	  data: inventoryData,
-	  shortages,
-	  stats: { totalItems: items.length, totalCounted, totalShortages },
-	  status: totalShortages > 0 ? 'pending' : 'completed'
-	};
+	const newList = { name: listName, createdBy: currentUser.name, createdAt: new Date().toISOString(), data: inventoryData, shortages, stats: { totalItems: items.length, totalCounted, totalShortages }, status: totalShortages > 0 ? 'pending' : 'completed' };
 	await addDoc(listsRef, newList);
 	showNotification('הרשימה נשמרה בהצלחה!');
 	resetCurrentInventory();
@@ -1158,187 +1124,96 @@
 
 
   // ---------- MORNING COUNT & LIVE USAGE ----------
-  function getTodayDateKey() {
-	  const today = new Date();
-	  const year = today.getFullYear();
-	  const month = String(today.getMonth() + 1).padStart(2, '0');
-	  const day = String(today.getDate()).padStart(2, '0');
-	  return `${year}-${month}-${day}`;
-  }
+  function getTodayDateKey() { return new Date().toISOString().split('T')[0]; }
 
   function initializeMorningCountTable() {
 	const tbody = document.querySelector("#morningCountTable tbody");
-	tbody.innerHTML = (items || []).map(item => `
-	  <tr data-item-id="${item.id}">
-		<td>${item.name}</td>
-		<td>${item.unit}</td>
-		<td><input type="number" min="0" placeholder="0"></td>
-	  </tr>
-	`).join('');
+	tbody.innerHTML = (items || []).map(item => `<tr data-item-id="${item.id}"><td>${item.name}</td><td>${item.unit}</td><td><input type="number" min="0" placeholder="0"></td></tr>`).join('');
   }
 
   function updateMorningCountUI() {
-	const statusEl = document.getElementById('morningCountStatus');
-	const saveBtn = document.getElementById('saveMorningCountBtn');
-
+	const statusEl = document.getElementById('morningCountStatus'), saveBtn = document.getElementById('saveMorningCountBtn');
 	if (todaysCountData) {
-	  statusEl.textContent = 'בוצעה וניתן לערוך אותה';
-	  statusEl.style.color = 'green';
-	  saveBtn.textContent = 'עדכן ספירת בוקר';
-	  // Populate inputs with existing data
-	  const rows = document.querySelectorAll('#morningCountTable tbody tr');
-	  rows.forEach(row => {
+	  statusEl.textContent = 'בוצעה וניתן לערוך אותה'; statusEl.style.color = 'green'; saveBtn.textContent = 'עדכן ספירת בוקר';
+	  document.querySelectorAll('#morningCountTable tbody tr').forEach(row => {
 		const itemData = todaysCountData.items.find(i => i.id === row.dataset.itemId);
-		if (itemData) {
-		  row.querySelector('input').value = itemData.startQty;
-		}
+		if (itemData) { row.querySelector('input').value = itemData.startQty; }
 	  });
-	} else {
-	  statusEl.textContent = 'לא בוצעה';
-	  statusEl.style.color = 'red';
-	  saveBtn.textContent = 'שמור ספירת בוקר';
-	}
+	} else { statusEl.textContent = 'לא בוצעה'; statusEl.style.color = 'red'; saveBtn.textContent = 'שמור ספירת בוקר'; }
   }
 
   async function saveMorningCount() {
-	const dateKey = getTodayDateKey();
-	const docRef = doc(db, 'dailyCounts', dateKey);
-	const itemsData = [];
-	const rows = document.querySelectorAll("#morningCountTable tbody tr");
-
-	rows.forEach(row => {
-	  const itemId = row.dataset.itemId;
-	  const itemMaster = items.find(i => i.id === itemId);
-	  if (!itemMaster) return;
-
-	  const startQty = row.querySelector("input").valueAsNumber || 0;
-	  itemsData.push({
-		id: itemId,
-		name: itemMaster.name,
-		unit: itemMaster.unit,
-		target: itemMaster.target,
-		startQty: startQty,
-		usedQty: (todaysCountData?.items.find(i => i.id === itemId)?.usedQty) || 0 // Preserve existing usage
-	  });
+	const dateKey = getTodayDateKey(), docRef = doc(db, 'dailyCounts', dateKey), itemsData = [];
+	document.querySelectorAll("#morningCountTable tbody tr").forEach(row => {
+	  const itemId = row.dataset.itemId, itemMaster = items.find(i => i.id === itemId); if (!itemMaster) return;
+	  const startQty = row.querySelector("input").valueAsNumber || 0, existingItem = todaysCountData?.items.find(i => i.id === itemId);
+	  itemsData.push({ id: itemId, name: itemMaster.name, unit: itemMaster.unit, target: itemMaster.target, startQty: startQty, usedQty: existingItem?.usedQty || 0, addedQty: existingItem?.addedQty || 0 });
 	});
-
 	await setDoc(docRef, { items: itemsData, lastUpdated: new Date().toISOString() });
 	showNotification('ספירת הבוקר נשמרה/עודכנה בהצלחה!');
   }
   window.saveMorningCount = saveMorningCount;
 
-
   function initializeLiveUsageTable() {
 	const tbody = document.querySelector("#liveUsageTable tbody");
 	tbody.innerHTML = (items || []).map(item => `
 	  <tr data-item-id="${item.id}">
-		<td>${item.name}</td>
-		<td class="start-qty">-</td>
-		<td class="used-qty">-</td>
-		<td class="current-qty">-</td>
-		<td>
-		  <input type="number" min="1" value="1" style="width: 60px;">
-		  <button class="btn-secondary" style="min-width:auto; padding: 8px 12px; font-size: 14px;" onclick="logUsage('${item.id}', this)">הורד</button>
-		</td>
-	  </tr>
-	`).join('');
+		<td>${item.name}</td><td class="start-qty">-</td><td class="used-qty">-</td><td class="added-qty">-</td><td class="current-qty">-</td>
+		<td style="display: flex; gap: 5px; justify-content: center; align-items: center;">
+		  <input type="number" min="1" value="1" style="width: 50px;">
+		  <button class="btn-secondary" style="min-width:auto; padding: 6px 10px; font-size: 12px;" onclick="logUsage('${item.id}', this, 'subtract')">הורד</button>
+		  <button class="btn-success" style="min-width:auto; padding: 6px 10px; font-size: 12px;" onclick="logUsage('${item.id}', this, 'add')">הוסף</button>
+		</td></tr>`).join('');
   }
 
   function updateLiveUsageUI() {
-	const prerequisite = document.getElementById('liveUsagePrerequisite');
-	const content = document.getElementById('liveUsageContent');
-
-	if (!todaysCountData) {
-	  prerequisite.innerHTML = `<div class="empty-state"><h3>יש לבצע "ספירת בוקר" תחילה.</h3></div>`;
-	  prerequisite.classList.remove('hidden');
-	  content.classList.add('hidden');
-	  return;
-	}
-
-	prerequisite.classList.add('hidden');
-	content.classList.remove('hidden');
-
-	const rows = document.querySelectorAll('#liveUsageTable tbody tr');
-	rows.forEach(row => {
+	const prerequisite = document.getElementById('liveUsagePrerequisite'), content = document.getElementById('liveUsageContent');
+	if (!todaysCountData) { prerequisite.innerHTML = `<div class="empty-state"><h3>יש לבצע "ספירת בוקר" תחילה.</h3></div>`; prerequisite.classList.remove('hidden'); content.classList.add('hidden'); return; }
+	prerequisite.classList.add('hidden'); content.classList.remove('hidden');
+	document.querySelectorAll('#liveUsageTable tbody tr').forEach(row => {
 	  const itemData = todaysCountData.items.find(i => i.id === row.dataset.itemId);
 	  if (itemData) {
-		const currentQty = itemData.startQty - itemData.usedQty;
-		row.querySelector('.start-qty').textContent = itemData.startQty;
-		row.querySelector('.used-qty').textContent = itemData.usedQty;
+		const currentQty = (itemData.startQty || 0) - (itemData.usedQty || 0) + (itemData.addedQty || 0);
+		row.querySelector('.start-qty').textContent = itemData.startQty || 0;
+		row.querySelector('.used-qty').textContent = itemData.usedQty || 0;
+		row.querySelector('.added-qty').textContent = itemData.addedQty || 0;
 		row.querySelector('.current-qty').textContent = currentQty;
 		row.style.background = currentQty < itemData.target ? '#fff0f0' : 'transparent';
 	  }
 	});
   }
 
-  async function logUsage(itemId, buttonElement) {
-	if (!todaysCountData) {
-	  showNotification('יש לבצע ספירת בוקר לפני רישום שימוש', 'error');
-	  return;
-	}
-	const input = buttonElement.previousElementSibling;
-	const qtyToUse = input.valueAsNumber;
-
-	if (!qtyToUse || qtyToUse <= 0) {
-	  showNotification('יש להזין כמות חיובית', 'error');
-	  return;
-	}
-
-	const dateKey = getTodayDateKey();
-	const docRef = doc(db, 'dailyCounts', dateKey);
-
+  async function logUsage(itemId, buttonElement, actionType) {
+	if (!todaysCountData) { showNotification('יש לבצע ספירת בוקר לפני רישום שימוש', 'error'); return; }
+	const input = buttonElement.parentElement.querySelector('input'), qtyToLog = input.valueAsNumber;
+	if (!qtyToLog || qtyToLog <= 0) { showNotification('יש להזין כמות חיובית', 'error'); return; }
+	const dateKey = getTodayDateKey(), docRef = doc(db, 'dailyCounts', dateKey);
 	const newItemsArray = todaysCountData.items.map(item => {
 	  if (item.id === itemId) {
-		return { ...item, usedQty: item.usedQty + qtyToUse };
-	  }
-	  return item;
+		if (actionType === 'subtract') return { ...item, usedQty: (item.usedQty || 0) + qtyToLog };
+		else if (actionType === 'add') return { ...item, addedQty: (item.addedQty || 0) + qtyToLog };
+	  } return item;
 	});
-
 	await updateDoc(docRef, { items: newItemsArray, lastUpdated: new Date().toISOString() });
-	showNotification(`- ${qtyToUse} ${items.find(i=>i.id===itemId)?.name}`);
-	input.value = "1"; // Reset input
+	const itemName = items.find(i=>i.id===itemId)?.name || '', notifMsg = actionType === 'subtract' ? `- ${qtyToLog} ${itemName}` : `+ ${qtyToLog} ${itemName}`;
+	showNotification(notifMsg, actionType === 'add' ? 'success' : 'secondary');
+	input.value = "1";
   }
   window.logUsage = logUsage;
 
   async function generateEndOfDayList() {
-	  if (!todaysCountData) {
-		  showNotification('לא ניתן ליצור רשימה ללא נתוני ספירת בוקר', 'error');
-		  return;
-	  }
-	  if (!confirm('האם אתה בטוח שברצונך ליצור את רשימת סוף היום? פעולה זו תיצור רשימה חדשה.')) {
-		  return;
-	  }
-
-	  const inventoryData = [];
-	  const shortages = [];
-	  let totalShortages = 0, totalCounted = 0;
-
+	  if (!todaysCountData) { showNotification('לא ניתן ליצור רשימה ללא נתוני ספירת בוקר', 'error'); return; }
+	  if (!confirm('האם אתה בטוח שברצונך ליצור את רשימת סוף היום? פעולה זו תיצור רשימה חדשה.')) return;
+	  const inventoryData = [], shortages = [];
+	  let totalShortages = 0, totalCounted = items.length;
 	  todaysCountData.items.forEach(item => {
-		  const current = item.startQty - item.usedQty;
+		  const current = (item.startQty || 0) - (item.usedQty || 0) + (item.addedQty || 0);
 		  const shortage = Math.max(0, item.target - current);
-		  totalCounted++; // All items are counted in this process
-
-		  if (shortage > 0) {
-			  totalShortages++;
-			  shortages.push({ id: item.id, name: item.name, unit: item.unit, qty: shortage });
-		  }
-		  inventoryData.push({
-			  id: item.id, name: item.name, unit: item.unit, target: item.target,
-			  current: current, shortage: shortage
-		  });
+		  if (shortage > 0) { totalShortages++; shortages.push({ id: item.id, name: item.name, unit: item.unit, qty: shortage }); }
+		  inventoryData.push({ id: item.id, name: item.name, unit: item.unit, target: item.target, current: current, shortage: shortage });
 	  });
-
 	  const listName = `רשימת סוף יום - ${new Date().toLocaleDateString('he-IL')}`;
-	  const newList = {
-		name: listName,
-		createdBy: `מערכת (אוטומטי)`,
-		createdAt: new Date().toISOString(),
-		data: inventoryData,
-		shortages,
-		stats: { totalItems: items.length, totalCounted, totalShortages },
-		status: totalShortages > 0 ? 'pending' : 'completed'
-	  };
-
+	  const newList = { name: listName, createdBy: `מערכת (אוטומטי)`, createdAt: new Date().toISOString(), data: inventoryData, shortages, stats: { totalItems: items.length, totalCounted, totalShortages }, status: totalShortages > 0 ? 'pending' : 'completed' };
 	  await addDoc(listsRef, newList);
 	  showNotification('רשימת סוף היום נוצרה בהצלחה!');
 	  switchTab('lists');
@@ -1346,284 +1221,54 @@
   window.generateEndOfDayList = generateEndOfDayList;
 
 
-  // ---------- ALL OTHER FUNCTIONS (UNCHANGED OR MINOR CHANGES) ----------
-  // (User management, Item management, List viewing, etc.)
-
-  function showLoginError(message) {
-	const errorDiv = document.getElementById('loginError');
-	errorDiv.textContent = message;
-	errorDiv.classList.remove('hidden');
-	setTimeout(() => { errorDiv.classList.add('hidden'); }, 3000);
+  // ---------- STORAGE INVENTORY ----------
+  function initializeStorageInventoryTable() {
+	  const tbody = document.querySelector("#storageInventoryTable tbody");
+	  tbody.innerHTML = (items || []).map(item => `<tr data-item-id="${item.id}"><td>${item.name}</td><td>${item.unit}</td><td><input type="number" min="0" placeholder="0"></td></tr>`).join('');
   }
 
-  async function addUser() {
-	if (!currentUser || currentUser.role !== 'owner') return;
-	const username = document.getElementById('newUsername').value.trim();
-	const password = document.getElementById('newPassword').value;
-	const role = document.getElementById('newRole').value;
-	if (!username || !password) {
-	  showNotification('יש למלא שם משתמש וסיסמה', 'error');
-	  return;
-	}
-	if (users[username]) {
-	  showNotification('שם המשתמש כבר קיים', 'error');
-	  return;
-	}
-	await setDoc(doc(db, 'users', username), { password, role, name: username });
-	document.getElementById('newUsername').value = '';
-	document.getElementById('newPassword').value = '';
-	showNotification('המשתמש נוסף בהצלחה');
-  }
-  window.addUser = addUser;
-
-  async function deleteUser(username) {
-	if (!currentUser || currentUser.role !== 'owner' || username === currentUser.username) return;
-	if (confirm(`האם אתה בטוח שברצונך למחוק את המשתמש "${username}"?`)) {
-	  await deleteDoc(doc(db, 'users', username));
-	  showNotification('המשתמש נמחק בהצלחה');
-	}
-  }
-  window.deleteUser = deleteUser;
-
-  async function toggleUserRole(username) {
-	if (!currentUser || currentUser.role !== 'owner' || username === currentUser.username) return;
-	const newRole = users[username].role === 'owner' ? 'worker' : 'owner';
-	await updateDoc(doc(db, 'users', username), { role: newRole });
-	showNotification('תפקיד המשתמש שונה בהצלחה');
-  }
-  window.toggleUserRole = toggleUserRole;
-
-  function loadUsersGrid() {
-	const grid = document.getElementById('usersGrid');
-	const entries = Object.entries(users);
-	if (entries.length === 0) {
-	  grid.innerHTML = `<div class="empty-state"><h3>אין משתמשים</h3></div>`;
-	  return;
-	}
-	grid.innerHTML = entries.map(([username, user]) => `
-	  <div class="user-card">
-		<div class="user-details">
-		  <h4>${user.name}</h4>
-		  <span class="role-badge ${user.role}">${user.role === 'owner' ? 'בעלים' : 'עובד'}</span>
-		</div>
-		<div class="user-actions">
-		  ${username !== (currentUser && currentUser.username) ? `
-			<button class="btn-warning" onclick="toggleUserRole('${username}')">
-			  ${user.role === 'owner' ? 'הפוך לעובד' : 'הפוך לבעלים'}
-			</button>
-			<button class="btn-danger" onclick="deleteUser('${username}')">מחק</button>` :
-			'<span style="font-size: 12px; color: #7f8c8d;">(אתה)</span>'
+  function updateStorageInventoryUI() {
+	  const lastUpdatedEl = document.getElementById('storageLastUpdated');
+	  lastUpdatedEl.textContent = storageInventoryData?.lastUpdated ? new Date(storageInventoryData.lastUpdated).toLocaleString('he-IL') : 'מעולם לא';
+	  document.querySelectorAll('#storageInventoryTable tbody tr').forEach(row => {
+		  const input = row.querySelector('input'); input.value = '';
+		  if (storageInventoryData?.items) {
+			  const itemData = storageInventoryData.items.find(i => i.id === row.dataset.itemId);
+			  if (itemData) { input.value = itemData.qty; }
 		  }
-		</div>
-	  </div>
-	`).join('');
+	  });
   }
 
-  function loadMasterItemsList() {
-	  const container = document.getElementById('masterItemsList');
-	  if (!items || items.length === 0) {
-		container.innerHTML = `<div class="empty-state"><h3>אין פריטים ברשימה הראשית</h3></div>`;
-		return;
-	  }
-	  container.innerHTML = `
-		  <table>
-			  <thead>
-				  <tr>
-					  <th>שם פריט</th>
-					  <th>יחידה</th>
-					  <th>כמות יעד</th>
-					  <th>פעולות</th>
-				  </tr>
-			  </thead>
-			  <tbody>
-				  ${items.map((item) => `
-					  <tr>
-						  <td>${item.name}</td>
-						  <td>${item.unit}</td>
-						  <td>${item.target}</td>
-						  <td>
-							  <button class="btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deleteItem('${item.id}')">מחק</button>
-						  </td>
-					  </tr>
-				  `).join('')}
-			  </tbody>
-		  </table>
-	  `;
+  async function saveStorageInventory() {
+	  const itemsData = [];
+	  document.querySelectorAll("#storageInventoryTable tbody tr").forEach(row => {
+		  const itemMaster = items.find(i => i.id === row.dataset.itemId); if (!itemMaster) return;
+		  const qty = row.querySelector("input").valueAsNumber || 0;
+		  if (qty > 0) { itemsData.push({ id: itemMaster.id, name: itemMaster.name, unit: itemMaster.unit, qty: qty }); }
+	  });
+	  await setDoc(storageInventoryRef, { items: itemsData, lastUpdated: new Date().toISOString(), updatedBy: currentUser.name });
+	  showNotification('מלאי המחסן עודכן בהצלחה!');
   }
+  window.saveStorageInventory = saveStorageInventory;
 
-  async function addItem() {
-	  if (!currentUser || currentUser.role !== 'owner') return;
-	  const name = document.getElementById('newItemName').value.trim();
-	  const unit = document.getElementById('newItemUnit').value.trim();
-	  const target = parseInt(document.getElementById('newItemTarget').value, 10);
 
-	  if (!name || !unit || isNaN(target) || target < 0) {
-		  showNotification('יש למלא את כל השדות כראוי', 'error');
-		  return;
-	  }
-	  await addDoc(itemsRef, { name, unit, target });
-	  document.getElementById('newItemName').value = '';
-	  document.getElementById('newItemUnit').value = '';
-	  document.getElementById('newItemTarget').value = '';
-	  showNotification('הפריט נוסף בהצלחה');
-  }
-  window.addItem = addItem;
-
-  async function deleteItem(itemId) {
-	  if (!currentUser || currentUser.role !== 'owner') return;
-	  const item = items.find(i => i.id === itemId);
-	  if (!item) return;
-	  if (confirm(`האם אתה בטוח שברצונך למחוק את הפריט "${item.name}"?`)) {
-		  await deleteDoc(doc(db, 'items', itemId));
-		  showNotification('הפריט נמחק');
-	  }
-  }
-  window.deleteItem = deleteItem;
-
-  function loadInventoryLists() {
-	const container = document.getElementById('inventoryLists');
-	if (!inventoryLists || inventoryLists.length === 0) {
-	  container.innerHTML = `<div class="empty-state"><h3>🗂️ אין רשימות קיימות</h3></div>`;
-	  return;
-	}
-	container.innerHTML = inventoryLists.map(list => `
-	  <div class="inventory-card">
-		<div class="inventory-card-header">
-		  <div class="status-badge ${list.status}">${getStatusText(list.status)}</div>
-		  <h3>${list.name}</h3>
-		  <div class="inventory-meta">
-			<span>👤 ${list.createdBy}</span>
-			<span>🕒 ${getTimeAgo(new Date(list.createdAt))}</span>
-		  </div>
-		</div>
-		<div class="inventory-card-body">
-		  <div class="inventory-stats">
-			<div class="mini-stat"><div class="mini-stat-number">${list.stats.totalItems}</div><div class="mini-stat-label">פריטים</div></div>
-			<div class="mini-stat"><div class="mini-stat-number">${list.stats.totalCounted}</div><div class="mini-stat-label">נספרו</div></div>
-			<div class="mini-stat"><div class="mini-stat-number">${list.stats.totalShortages}</div><div class="mini-stat-label">חוסרים</div></div>
-		  </div>
-		  <div class="inventory-actions">
-			<button class="btn-primary" onclick="viewInventoryDetails('${list.id}')">צפה בפרטים</button>
-			${currentUser && currentUser.role === 'owner' ? `<button class="btn-danger" onclick="deleteInventoryList('${list.id}')">מחק</button>` : ''}
-		  </div>
-		</div>
-	  </div>
-	`).join('');
-  }
-  window.loadInventoryLists = loadInventoryLists;
-
-  async function deleteInventoryList(listId) {
-	if (!currentUser || currentUser.role !== 'owner') return;
-	const list = inventoryLists.find(l => l.id === listId);
-	if (!list) return;
-	if (confirm(`האם אתה בטוח שברצונך למחוק את הרשימה "${list.name}"?`)) {
-	  await deleteDoc(doc(db, 'inventoryLists', listId));
-	  showNotification('הרשימה נמחקה בהצלחה');
-	}
-  }
-  window.deleteInventoryList = deleteInventoryList;
-
-  function loadStorageView() {
-	const container = document.getElementById('storageContent');
-	// Aggregate shortages from all lists
-	const aggregatedShortages = (inventoryLists || [])
-	  .flatMap(list => list.shortages || [])
-	  .reduce((acc, shortage) => {
-		const key = shortage.name; // Use name as key
-		if (!acc[key]) {
-		  acc[key] = { ...shortage, qty: 0 };
-		}
-		acc[key].qty += shortage.qty;
-		return acc;
-	  }, {});
-
-	const storageItems = Object.values(aggregatedShortages).filter(item => item.qty > 0);
-
-	if (storageItems.length === 0) {
-	  container.innerHTML = `<div class="empty-state"><h3>🏪 אין פריטים לאיסוף מהמחסן</h3></div>`;
-	  return;
-	}
-
-	container.innerHTML = `
-	  <div class="stats">
-		<div class="stat-card">
-		  <div class="stat-number">${storageItems.length}</div>
-		  <div class="stat-label">סה"כ פריטים בחוסר</div>
-		</div>
-	  </div>
-	  <table>
-		<thead><tr><th>פריט</th><th>יחידה</th><th>סה"כ כמות להביא</th></tr></thead>
-		<tbody>
-		  ${storageItems.map(item => `
-			<tr><td>${item.name}</td><td>${item.unit}</td><td style="font-weight: bold; font-size: 1.2em;">${item.qty}</td></tr>
-		  `).join('')}
-		</tbody>
-	  </table>
-	`;
-  }
-  window.loadStorageView = loadStorageView;
-
-  function updateTabBadges() {
-	const listsCount = inventoryLists.length || 0;
-	const storageCount = Object.values((inventoryLists || [])
-	  .flatMap(list => list.shortages || [])
-	  .reduce((acc, s) => { acc[s.name] = true; return acc; }, {})).length;
-
-	document.getElementById('listsBadge').textContent = listsCount;
-	document.getElementById('storageBadge').textContent = storageCount;
-	document.getElementById('listsBadge').style.display = listsCount > 0 ? '' : 'none';
-	document.getElementById('storageBadge').style.display = storageCount > 0 ? '' : 'none';
-  }
-
-  function showNotification(message, type = 'success') {
-	const notification = document.getElementById('notification');
-	notification.textContent = message;
-	notification.className = `notification ${type} show`;
-	setTimeout(() => { notification.classList.remove('show'); }, 3000);
-  }
-
-  function getStatusText(status) {
-	return { 'completed': 'הושלם', 'pending': 'ממתין', 'in-progress': 'בתהליך' }[status] || 'לא ידוע';
-  }
-
-  function getTimeAgo(date) {
-	const diffMs = new Date() - date;
-	const diffMins = Math.round(diffMs / 60000);
-	if (diffMins < 1) return 'הרגע';
-	if (diffMins < 60) return `לפני ${diffMins} דקות`;
-	const diffHours = Math.round(diffMins / 60);
-	if (diffHours < 24) return `לפני ${diffHours} שעות`;
-	const diffDays = Math.round(diffHours / 24);
-	return `לפני ${diffDays} ימים`;
-  }
-
-  function viewInventoryDetails(listId) {
-	  const list = inventoryLists.find(l => l.id === listId);
-	  if (!list) return;
-
-	  let detailsHtml = `
-		  <h2>${list.name}</h2>
-		  <p>נוצר על ידי: ${list.createdBy} ב-${new Date(list.createdAt).toLocaleString('he-IL')}</p>
-		  <table style="width:100%;">
-			  <thead><tr><th>פריט</th><th>יעד</th><th>נמצא</th><th>חוסר</th></tr></thead>
-			  <tbody>
-				  ${list.data.map(item => `
-					  <tr style="${item.shortage > 0 ? 'background:#ffe0e0' : ''}">
-						  <td>${item.name}</td>
-						  <td>${item.target}</td>
-						  <td>${item.current}</td>
-						  <td style="font-weight:bold; color:${item.shortage > 0 ? '#e74c3c' : 'green'};">${item.shortage}</td>
-					  </tr>
-				  `).join('')}
-			  </tbody>
-		  </table>
-	  `;
-	  const newWindow = window.open("", "Details", "width=900,height=700");
-	  newWindow.document.write(`<html lang="he" dir="rtl"><head><title>פרטי רשימה</title><style>${document.querySelector('style').innerHTML}</style></head><body><div class="container" style="margin-top:20px;"><div class="section">${detailsHtml}</div></div></body></html>`);
-	  newWindow.document.close();
-  }
-  window.viewInventoryDetails = viewInventoryDetails;
-
+  // ---------- ALL OTHER FUNCTIONS (UNCHANGED OR MINOR CHANGES) ----------
+  function showLoginError(message) { const e=document.getElementById('loginError');e.textContent=message;e.classList.remove('hidden');setTimeout(()=>{e.classList.add('hidden')},3e3)}
+  async function addUser(){if(!currentUser||"owner"!==currentUser.role)return;const e=document.getElementById("newUsername").value.trim(),t=document.getElementById("newPassword").value,n=document.getElementById("newRole").value;e&&t?users[e]?showNotification("שם המשתמש כבר קיים","error"):(await setDoc(doc(db,"users",e),{password:t,role:n,name:e}),document.getElementById("newUsername").value="",document.getElementById("newPassword").value="",showNotification("המשתמש נוסף בהצלחה")):showNotification("יש למלא שם משתמש וסיסמה","error")}window.addUser=addUser;
+  async function deleteUser(e){currentUser&&"owner"===currentUser.role&&e!==currentUser.username&&confirm(`האם אתה בטוח שברצונך למחוק את המשתמש "${e}"?`)&&(await deleteDoc(doc(db,"users",e)),showNotification("המשתמש נמחק בהצלחה"))}window.deleteUser=deleteUser;
+  async function toggleUserRole(e){if(!currentUser||"owner"!==currentUser.role||e===currentUser.username)return;const t="owner"===users[e].role?"worker":"owner";await updateDoc(doc(db,"users",e),{role:t}),showNotification("תפקיד המשתמש שונה בהצלחה")}window.toggleUserRole=toggleUserRole;
+  function loadUsersGrid(){const e=document.getElementById("usersGrid"),t=Object.entries(users);t.length?e.innerHTML=t.map(([e,t])=>`\n	  <div class="user-card">\n		<div class="user-details">\n		  <h4>${t.name}</h4>\n		  <span class="role-badge ${t.role}">${"owner"===t.role?"בעלים":"עובד"}</span>\n		</div>\n		<div class="user-actions">\n		  ${e!==currentUser?.username?`\n				<button class="btn-warning" onclick="toggleUserRole('${e}')">\n				  ${"owner"===t.role?"הפוך לעובד":"הפוך לבעלים"}\n				</button>\n				<button class="btn-danger" onclick="deleteUser('${e}')">מחק</button>`:'<span style="font-size: 12px; color: #7f8c8d;">(אתה)</span>'}\n		</div>\n	  </div>\n	`).join(""):e.innerHTML='<div class="empty-state"><h3>אין משתמשים</h3></div>'}
+  function loadMasterItemsList(){const e=document.getElementById("masterItemsList");items&&items.length?e.innerHTML=`\n		  <table>\n			  <thead><tr><th>שם פריט</th><th>יחידה</th><th>כמות יעד</th><th>פעולות</th></tr></thead>\n			  <tbody>\n				  ${items.map(e=>`\n						  <tr>\n							  <td>${e.name}</td>\n							  <td>${e.unit}</td>\n							  <td>${e.target}</td>\n							  <td><button class="btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deleteItem('${e.id}')">מחק</button></td>\n						  </tr>\n					  `).join("")}\n			  </tbody>\n		  </table>\n	  `:e.innerHTML='<div class="empty-state"><h3>אין פריטים ברשימה הראשית</h3></div>'}
+  async function addItem(){if(!currentUser||"owner"!==currentUser.role)return;const e=document.getElementById("newItemName").value.trim(),t=document.getElementById("newItemUnit").value.trim(),n=parseInt(document.getElementById("newItemTarget").value,10);e&&t&&!isNaN(n)&&n>=0?(await addDoc(itemsRef,{name:e,unit:t,target:n}),document.getElementById("newItemName").value="",document.getElementById("newItemUnit").value="",document.getElementById("newItemTarget").value="",showNotification("הפריט נוסף בהצלחה")):showNotification("יש למלא את כל השדות כראוי","error")}window.addItem=addItem;
+  async function deleteItem(e){if(!currentUser||"owner"!==currentUser.role)return;const t=items.find(t=>t.id===e);t&&confirm(`האם אתה בטוח שברצונך למחוק את הפריט "${t.name}"?`)&&(await deleteDoc(doc(db,"items",e)),showNotification("הפריט נמחק"))}window.deleteItem=deleteItem;
+  function loadInventoryLists(){const e=document.getElementById("inventoryLists");inventoryLists&&inventoryLists.length?e.innerHTML=inventoryLists.map(e=>`\n	  <div class="inventory-card">\n		<div class="inventory-card-header">\n		  <div class="status-badge ${e.status}">${getStatusText(e.status)}</div>\n		  <h3>${e.name}</h3>\n		  <div class="inventory-meta">\n			<span>👤 ${e.createdBy}</span>\n			<span>🕒 ${getTimeAgo(new Date(e.createdAt))}</span>\n		  </div>\n		</div>\n		<div class="inventory-card-body">\n		  <div class="inventory-stats">\n			<div class="mini-stat"><div class="mini-stat-number">${e.stats.totalItems}</div><div class="mini-stat-label">פריטים</div></div>\n			<div class="mini-stat"><div class="mini-stat-number">${e.stats.totalCounted}</div><div class="mini-stat-label">נספרו</div></div>\n			<div class="mini-stat"><div class="mini-stat-number">${e.stats.totalShortages}</div><div class="mini-stat-label">חוסרים</div></div>\n		  </div>\n		  <div class="inventory-actions">\n			<button class="btn-primary" onclick="viewInventoryDetails('${e.id}')">צפה בפרטים</button>\n			${currentUser&&"owner"===currentUser.role?`<button class="btn-danger" onclick="deleteInventoryList('${e.id}')">מחק</button>`:""}\n		  </div>\n		</div>\n	  </div>\n	`).join(""):e.innerHTML='<div class="empty-state"><h3>🗂️ אין רשימות קיימות</h3></div>'}window.loadInventoryLists=loadInventoryLists;
+  async function deleteInventoryList(e){if(!currentUser||"owner"!==currentUser.role)return;const t=inventoryLists.find(t=>t.id===e);t&&confirm(`האם אתה בטוח שברצונך למחוק את הרשימה "${t.name}"?`)&&(await deleteDoc(doc(db,"inventoryLists",e)),showNotification("הרשימה נמחקה בהצלחה"))}window.deleteInventoryList=deleteInventoryList;
+  function loadStorageView(){const e=document.getElementById("storageContent"),t=Object.values((inventoryLists||[]).flatMap(e=>e.shortages||[]).reduce((e,t)=>{const n=t.name;return e[n]||(e[n]={...t,qty:0}),e[n].qty+=t.qty,e},{})).filter(e=>e.qty>0);t.length?e.innerHTML=`\n	  <div class="stats">\n		<div class="stat-card">\n		  <div class="stat-number">${t.length}</div>\n		  <div class="stat-label">סה"כ פריטים בחוסר</div>\n		</div>\n	  </div>\n	  <table>\n		<thead><tr><th>פריט</th><th>יחידה</th><th>סה"כ כמות להביא</th></tr></thead>\n		<tbody>\n		  ${t.map(e=>`\n				<tr><td>${e.name}</td><td>${e.unit}</td><td style="font-weight: bold; font-size: 1.2em;">${e.qty}</td></tr>\n			  `).join("")}\n		</tbody>\n	  </table>\n	`:e.innerHTML='<div class="empty-state"><h3>🏪 אין פריטים לאיסוף מהמחסן</h3></div>'}window.loadStorageView=loadStorageView;
+  function updateTabBadges(){const e=inventoryLists.length||0,t=Object.values((inventoryLists||[]).flatMap(e=>e.shortages||[]).reduce((e,t)=>(e[t.name]=!0,e),{})).length;document.getElementById("listsBadge").textContent=e,document.getElementById("storageBadge").textContent=t,document.getElementById("listsBadge").style.display=e>0?"":"none",document.getElementById("storageBadge").style.display=t>0?"":"none"}
+  function showNotification(e,t="success"){const n=document.getElementById("notification");n.textContent=e,n.className=`notification ${t} show`,setTimeout(()=>{n.classList.remove("show")},3e3)}
+  function getStatusText(e){return{completed:"הושלם",pending:"ממתין","in-progress":"בתהליך"}[e]||"לא ידוע"}
+  function getTimeAgo(e){const t=Math.round((new Date-e)/6e4);if(t<1)return"הרגע";if(t<60)return`לפני ${t} דקות`;const n=Math.round(t/60);if(n<24)return`לפני ${n} שעות`;const o=Math.round(n/24);return`לפני ${o} ימים`}
+  function viewInventoryDetails(e){const t=inventoryLists.find(t=>t.id===e);if(!t)return;let n=`\n		  <h2>${t.name}</h2>\n		  <p>נוצר על ידי: ${t.createdBy} ב-${new Date(t.createdAt).toLocaleString("he-IL")}</p>\n		  <table style="width:100%;">\n			  <thead><tr><th>פריט</th><th>יעד</th><th>נמצא</th><th>חוסר</th></tr></thead>\n			  <tbody>\n				  ${t.data.map(e=>`\n						  <tr style="${e.shortage>0?"background:#ffe0e0":""}">\n							  <td>${e.name}</td>\n							  <td>${e.target}</td>\n							  <td>${e.current}</td>\n							  <td style="font-weight:bold; color:${e.shortage>0?"#e74c3c":"green"};">${e.shortage}</td>\n						  </tr>\n					  `).join("")}\n			  </tbody>\n		  </table>\n	  `;const o=window.open("","Details","width=900,height=700");o.document.write(`<html lang="he" dir="rtl"><head><title>פרטי רשימה</title><style>${document.querySelector("style").innerHTML}</style></head><body><div class="container" style="margin-top:20px;"><div class="section">${n}</div></div></body></html>`),o.document.close()}window.viewInventoryDetails=viewInventoryDetails;
   window.loadMasterItemsList = loadMasterItemsList;
   window.loadUsersGrid = loadUsersGrid;
 </script>
